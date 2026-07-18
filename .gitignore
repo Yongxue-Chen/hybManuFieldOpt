@@ -1,0 +1,126 @@
+# Python cache and build artifacts
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+build/
+dist/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Jupyter checkpoints
+.ipynb_checkpoints/
+
+# Editor and local tool state
+.vscode/
+.idea/
+.cursor/
+*.sublime-workspace
+*.sublime-project
+
+# Local secrets and credentials
+.env
+.env.*
+*.key
+*.token
+*.secret
+*.pem
+credentials*
+secrets*
+
+# OS files
+.DS_Store
+._*
+Thumbs.db
+
+# Logs and temporary files
+*.log
+*.bak
+*.swp
+*.tmp
+*.temp
+
+# Generated experiment outputs and large local artifacts
+output/**
+!output/
+!output/README.md
+!output/.gitkeep
+resultsForData/
+forFigures/
+forVideo/
+tmp/
+
+# Preprocessed/generated data directories: publish small demos under demo_data/ instead
+initialFields/**
+!initialFields/
+!initialFields/README.md
+!initialFields/.gitkeep
+
+# Model checkpoints and tensor/data caches
+*.pth
+*.pt
+*.ckpt
+*.npz
+*.npy
+*.h5
+*.hdf5
+*.pkl
+
+# Mesh, point-cloud, visualization, and plot outputs
+*.vtk
+*.vtp
+*.ply
+*.png
+*.jpg
+*.jpeg
+*.tif
+*.tiff
+*.gif
+*.csv
+*.svg
+
+# STL files are usually large/generated. Put public demo STL files under demo_data/ or examples/.
+*.stl
+
+# Keep placeholder docs in legacy/default data directories.
+!stlFiles/
+!stlFiles/README.md
+!stlFiles/.gitkeep
+
+# Allow curated public demos, examples, and documentation assets.
+!demo_data/
+!demo_data/**
+!examples/
+!examples/**
+!assets/
+!assets/**
+
+# Allow common demo/documentation asset formats inside curated public folders.
+!demo_data/**/*.stl
+!demo_data/**/*.pt
+!demo_data/**/*.pth
+!demo_data/**/*.json
+!demo_data/**/*.txt
+!demo_data/**/*.md
+!examples/**/*.stl
+!examples/**/*.pt
+!examples/**/*.pth
+!examples/**/*.json
+!examples/**/*.txt
+!examples/**/*.md
+!assets/**/*.png
+!assets/**/*.jpg
+!assets/**/*.jpeg
+!assets/**/*.svg
+!assets/**/*.gif
+
+# Keep repository metadata and docs trackable.
+!.gitignore
+!README.md
+!requirements.txt
