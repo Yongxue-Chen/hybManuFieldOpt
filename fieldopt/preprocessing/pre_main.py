@@ -10,6 +10,8 @@ import os
 import sys
 
 MODEL_NAME = 'MBBSmooth'
+DEFAULT_STL_DIR = 'stlFiles'
+DEFAULT_OUTPUT_ROOT = 'outputs/preprocess'
 SAMPLE_DENSITY = 3000
 R_SUPP = 1.5
 STEP_LEN = 5.0
@@ -27,10 +29,17 @@ PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
-def main():
+def main(model_name=None, input_stl=None, output_root=DEFAULT_OUTPUT_ROOT, output_dir=None):
     # --- 参数设置与模型加载 ---
-    model_path = f'stlFiles/{MODEL_NAME}.stl'
-    cfg = importlib.import_module(f'configs.config_multi_field_{MODEL_NAME}')
+    active_model_name = model_name or MODEL_NAME
+    model_path = input_stl or os.path.join(DEFAULT_STL_DIR, f'{active_model_name}.stl')
+    output_dir = output_dir or os.path.join(output_root, active_model_name)
+    os.makedirs(output_dir, exist_ok=True)
+    cfg = importlib.import_module(f'configs.config_multi_field_{active_model_name}')
+
+    print(f"Preprocess model: {active_model_name}")
+    print(f"Input STL: {model_path}")
+    print(f"Output directory: {output_dir}")
 
     # 归一化
     raw_mesh = trimesh.load(model_path)
@@ -121,9 +130,10 @@ def main():
         )
 
     # --- 5. 导出结果 (保持归一化空间) ---
-    body_output_path = f'stlFiles/{MODEL_NAME}_body_only.stl'
-    support_output_path = f'stlFiles/{MODEL_NAME}_support_only.stl'
-    combined_output_path = f'stlFiles/{MODEL_NAME}_support.stl'
+    body_output_path = os.path.join(output_dir, f'{active_model_name}_body_only.stl')
+    support_output_path = os.path.join(output_dir, f'{active_model_name}_support_only.stl')
+    combined_output_path = os.path.join(output_dir, f'{active_model_name}_support.stl')
+    removal_plan_path = os.path.join(output_dir, f'{active_model_name}_removal_plan.json')
 
     _export_stl(best_result['body_mesh'], body_output_path, "主体 STL")
     _export_stl(best_result['support_mesh'], support_output_path, "支撑 STL")
@@ -131,9 +141,9 @@ def main():
 
     # B. 导出拆除计划 (绝对逆序逻辑)
     # 全局逆序：最后生成的(外侧)先拆；局部逆序：从地面向上拆
-    export_removal_plan(best_result['finished_paths'][::-1])
+    export_removal_plan(best_result['finished_paths'][::-1], removal_plan_path)
 
-def export_removal_plan(paths):
+def export_removal_plan(paths, output_path):
     """
     保存拆除路径：
     1. paths: 全局倒序的路径列表 (List of paths)
@@ -154,9 +164,9 @@ def export_removal_plan(paths):
                 "axis": safe_axis # 这里现在存储的是真正校验成功的姿态
             })
     
-    output_path = f'stlFiles/{MODEL_NAME}_removal_plan.json'
     with open(output_path, 'w') as f:
         json.dump(plan, f, indent=4)
+    print(f"拆除计划已导出: path={output_path}, steps={len(plan)}")
 
 
 def _export_stl(mesh, output_path, label):

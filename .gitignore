@@ -51,6 +51,10 @@ output/**
 !output/
 !output/README.md
 !output/.gitkeep
+outputs/**
+!outputs/
+!outputs/README.md
+!outputs/.gitkeep
 resultsForData/
 forFigures/
 forVideo/

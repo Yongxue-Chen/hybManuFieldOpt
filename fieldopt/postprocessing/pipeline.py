@@ -89,7 +89,7 @@ def run_pipeline(
     Args:
         config_name (str): 
             Suffix for the configuration file to load.
-            Example: 'fertility' loads 'configs.config_multi_field_fertility'.
+            Example: 'bracket' loads 'configs.config_multi_field_bracket'.
         model_path (str):
             Absolute or relative path to the trained model weights (.pth file).
         

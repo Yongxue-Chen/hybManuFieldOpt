@@ -1,3 +1,18 @@
+"""Template configuration for a new FieldOpt-HM model.
+
+Copy this file to ``configs/config_multi_field_<model>.py`` and edit the
+model-specific values before running the pipeline. The filename suffix must
+match the ``--model_name`` argument used by preprocessing, pretraining,
+optimization, and postprocessing scripts.
+
+Required model-specific edits:
+- MAX_TIME: planning horizon. Start with an estimate, then update it after the
+  voxel-based initial solution is generated.
+- SCALE: physical scale used to normalize manufacturing dimensions.
+- MANU_CONFIG: AM/SM process parameters, especially SMToolParas.
+- WEIGHTS and BAYESIAN_*: loss weights and search ranges for optimization.
+"""
+
 import torch
 import numpy as np
 
@@ -5,7 +20,7 @@ import numpy as np
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 # parameters for manufacturing and loss function
-MAX_TIME = 42
+MAX_TIME = 200
 MARGIN = 0.01
 MARGIN_NEW = 0.01
 
@@ -27,8 +42,7 @@ L2 = 16
 T2 = 2**19
 F2 = 2
 N_min2 = 16
-# N_max2 = 4096
-N_max2 = 512
+N_max2 = 512   # Resolution of the finest level
 N_NEURONS2 = 64
 N_HIDDEN_LAYERS2 = 2
 
@@ -47,7 +61,6 @@ LM1 = 16  # Reduced from 16 to 12 levels
 TM1 = 2**16  # Reduced hash table size
 FM1 = 2
 N_minM1 = 16
-# N_maxM1 = 2048
 N_maxM1 = 1024
 N_NEURONSM1 = 64
 N_HIDDEN_LAYERSM1 = 2
@@ -56,7 +69,6 @@ LM2 = 16
 TM2 = 2**16
 FM2 = 2
 N_minM2 = 16
-# N_maxM2 = 4096
 N_maxM2 = 2048
 N_NEURONSM2 = 64
 N_HIDDEN_LAYERSM2 = 2
@@ -199,7 +211,7 @@ DEFAULT_BATCH_SIZE = 524288 * 8
 # ==============================================================================
 
 JOINT_VIRTUAL_EPOCHS = 200  # Increased training epochs
-JOINT_TRAIN_LR = 5e-5      # Increased initial learning rate
+JOINT_TRAIN_LR = 1e-4      # Increased initial learning rate
 FIELD3_LR_RATIO = 2.0
 WARMUP_EPOCHS = 2
 
@@ -210,35 +222,64 @@ ADAMW_EPS = 1e-15
 
 WEIGHT_DECAY = 1e-4
 
+# WEIGHTS = {
+#     'final_state': 0.01,
+#     'allowed_final_state': 0.065,
+
+#     'self_support': 10.0,
+
+#     'AM_Collision_Free': 10.0,
+
+#     'SM_Collision_Free': 0.9,
+#     'SM_Below_AABB': 100.0,
+
+#     'operation_volume': 0.6,
+#     'allowed_operation_volume': 0.5,
+    
+#     'structure': 5.0,
+#     'structure_simp_penalty': 0.0001,
+# }
 
 WEIGHTS = {
     'final_state': 1.0,
-    'allowed_final_state': 0.03,
+    'allowed_final_state': 0.02,
 
-    'self_support': 45.28,
+    'self_support': 35.0,
     'allowed_self_support': 0.001,
 
-    'AM_Collision_Free': 32.25,
+    'AM_Collision_Free': 69.0,
     'allowed_AM_Collision_Free': 0.0005,
 
-    'SM_Collision_Free': 4.528,
+    'SM_Collision_Free': 3.5,
     'SM_Below_AABB': 100.0,
 
     'operation_volume': 1.5,
-    'allowed_operation_volume': 0.3,
+    'allowed_operation_volume': 0.15,
     
-    'structure': 3.384,
-    # 'structure': 0.0,
-    'allowed_structure': 0.005,
+    'structure': 2.0,
+    'allowed_structure': 0.001,
     'structure_simp_penalty': 0.0001,
 }
 
 BAYESIAN_WEIGHT_SEARCH_SPACE = {
-    'self_support':             (1.0, 100.0, False),
-    'AM_Collision_Free':        (1.0, 100.0, False),
-    'SM_Collision_Free':        (0.1, 10.0, False),
-    'operation_volume':         (0.1, 10.0, True),
-    'structure':                (0.1, 80.0, True),
+    'self_support': {
+        'type': 'discrete_range',
+        'low': 1.0,
+        'high': 100.0,
+        'step': 1.0,
+    },
+    'AM_Collision_Free': {
+        'type': 'discrete_range',
+        'low': 1.0,
+        'high': 100.0,
+        'step': 1.0,
+    },
+    'structure': {
+        'type': 'discrete_range',
+        'low': 0.1,
+        'high': 10.0,
+        'step': 0.1,
+    },
 }
 
 BAYESIAN_METRIC_TARGETS = {
@@ -246,8 +287,8 @@ BAYESIAN_METRIC_TARGETS = {
     'self_support_ratio':        (0.99, 'higher'),   # 95% of AM points have support
     'AM_collision_free_ratio':   (0.99, 'higher'),   # 99% of AM points collision-free
     'SM_collision_free_ratio':   (0.90, 'higher'),   # 95% of SM points collision-free
-    'operation_volume_ratio':    (0.93, 'higher'),   # 90% of empty points not over-added
-    'structure_normalized':      (5e-7, 'lower'),  # per-grid structure penalty threshold
+    'operation_volume_ratio':    (0.90, 'higher'),   # 90% of empty points not over-added
+    'structure_normalized':      (4e-8, 'lower'),  # per-grid structure penalty threshold
 }
 
 TERM_SHORT_NAME = {
@@ -274,22 +315,21 @@ MANU_CONFIG = {
     'nAMCylinder': 2,
 
     'SMToolParas': {
-        'SMTipDiameter': 1.8/SCALE,
-        'SMShankDiameter': 2.0/SCALE,
+        'SMTipDiameter': 1.0/SCALE,
+        'SMShankDiameter': 1.0/SCALE,
         'SMToolLength': 12.0/SCALE,
         'SMHolderDiameter': 100.0/SCALE,
         'SMHolderLength': 70.0/SCALE,
         'SMCollisionMargin': 0.2/SCALE, #only for post-process
-        # 'SMCollisionMargin': 0.5/SCALE, #only for post-process
         'nSMTip': 2,
         'nSMTool': 4,
         'nSMHolder': 4
     },
 
     'min_layer_AM': 0.5/SCALE,
-    'max_layer_AM': 1.0/SCALE,
-    'min_layer_SM': 1.0/SCALE,
-    'max_layer_SM': 2.0/SCALE,
+    'max_layer_AM': 1.3/SCALE,
+    'min_layer_SM': 0.4/SCALE,
+    'max_layer_SM': 0.9/SCALE,
     'threshold_SM': 10.0/SCALE,
 }
 

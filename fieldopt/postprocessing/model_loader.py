@@ -36,8 +36,8 @@ def load_model_and_config(
     Load a trained MultiFieldModel and its associated config.
 
     Args:
-        config_name: Name suffix for config module, e.g. 'fertility' loads
-                     ``configs.config_multi_field_fertility``.
+        config_name: Name suffix for config module, e.g. 'bracket' loads
+                     ``configs.config_multi_field_bracket``.
         model_path:  Path to the saved ``.pth`` model weights.
         stl_dir:     Directory containing ``<config_name>.stl``.
         stl_path:    Optional explicit STL path. Overrides ``stl_dir`` lookup.
