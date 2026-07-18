@@ -1,9 +1,10 @@
 numpy
 tqdm
-Pillow
 matplotlib
 trimesh
 manifold3d
+embreex
+rtree
 pyvista
 scipy
 scikit-image
@@ -11,10 +12,8 @@ pyglet<2
 optuna
 pyvistaqt
 mesh-to-sdf
-PyQt5
 numpy-stl
 PySide6
 open3d
-taichi
 siren-pytorch
 libigl
