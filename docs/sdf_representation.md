@@ -34,7 +34,7 @@ Use neural/SIREN SDF checkpoint:
 conda run -n myenv python main_optimize.py \
     --model_name bracket \
     --geometry_backend siren \
-    --geometry_artifact_path demo_data/checkpoints/bracket_sdf.pt
+    --geometry_artifact_path model_data/implicit_representations/bracket/bracket_sdf.pt
 ```
 
 The same flags are available in `evaluate_model.py`, `bayesian_weight_optimizer.py`, `bayesian_weight_optimizer_constrained.py`, and `fieldopt.postprocessing`.

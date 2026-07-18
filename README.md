@@ -140,11 +140,28 @@ Default output:
 model_data/preprocessed/<model>/
 ```
 
-Run with the default paths:
+#### Run the bracket demo
+
+The repository already includes `configs/config_multi_field_bracket.py`. To test preprocessing with the bracket demo, place the bracket STL at the following exact path:
+
+```text
+model_data/target_shapes/bracket.stl
+```
+
+The filename must match `--model_name`. From the repository root, you can copy your STL into place and run preprocessing with:
 
 ```bash
+cp /path/to/bracket.stl model_data/target_shapes/bracket.stl
 conda run -n fieldopt_hm_rtx5090 python preprocess.py --model_name bracket
 ```
+
+This uses the default input path above and writes the demo results to:
+
+```text
+model_data/preprocessed/bracket/
+```
+
+The generated files are `bracket_body_only.stl`, `bracket_support_only.stl`, `bracket_support.stl`, and `bracket_removal_plan.json`.
 
 Or specify the input STL and output location explicitly:
 
@@ -292,7 +309,7 @@ conda run -n fieldopt_hm_rtx5090 python main_optimize.py \
 conda run -n fieldopt_hm_rtx5090 python main_optimize.py \
     --model_name bracket \
     --geometry_backend siren \
-    --geometry_artifact_path demo_data/checkpoints/bracket_sdf.pt
+    --geometry_artifact_path model_data/implicit_representations/bracket/bracket_sdf.pt
 ```
 
 ## Input and Output Formats
@@ -335,7 +352,7 @@ fieldopt/                         internal Python package
   postprocessing/                 layer/path generation and collision-aware postprocessing
   utils/                          data loading and training utilities
 docs/                             workflow and release-maintenance documentation
-demo_data/                        small public demo assets, to be added before release
+model_data/                       model inputs and artifacts organized by pipeline stage
 examples/                         runnable examples and example-specific assets
 assets/                           README and documentation assets
 initialFields/                    local initial field placeholder

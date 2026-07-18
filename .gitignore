@@ -60,7 +60,7 @@ forFigures/
 forVideo/
 tmp/
 
-# Preprocessed/generated data directories: publish small demos under demo_data/ instead
+# Legacy preprocessed/generated data directories
 initialFields/**
 !initialFields/
 !initialFields/README.md
@@ -95,29 +95,24 @@ model_data/**
 *.csv
 *.svg
 
-# STL files are usually large/generated. Put public demo STL files under demo_data/ or examples/.
+# STL files are usually large/generated.
 *.stl
+
+# Track the public bracket demo input in the unified model-data layout.
+!model_data/target_shapes/bracket.stl
 
 # Keep placeholder docs in legacy/default data directories.
 !stlFiles/
 !stlFiles/README.md
 !stlFiles/.gitkeep
 
-# Allow curated public demos, examples, and documentation assets.
-!demo_data/
-!demo_data/**
+# Allow examples and documentation assets.
 !examples/
 !examples/**
 !assets/
 !assets/**
 
-# Allow common demo/documentation asset formats inside curated public folders.
-!demo_data/**/*.stl
-!demo_data/**/*.pt
-!demo_data/**/*.pth
-!demo_data/**/*.json
-!demo_data/**/*.txt
-!demo_data/**/*.md
+# Allow common example/documentation asset formats inside curated public folders.
 !examples/**/*.stl
 !examples/**/*.pt
 !examples/**/*.pth

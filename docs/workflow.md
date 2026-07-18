@@ -38,7 +38,7 @@ The external implementation is not included in this source tree. Use the compani
 
 - https://github.com/Yongxue-Chen/hybManuAccEro
 
-Expected outputs should be placed under `initialFields/` or provided as demo data under `demo_data/`.
+Expected outputs should be placed under `model_data/initial_fields/<model>/`.
 
 ## 4. Configuration
 

@@ -36,7 +36,7 @@ Most implementation code lives under `fieldopt/`:
 
 ## Data and Output Placeholders
 
-- `demo_data/` - small public demo assets.
+- `model_data/` - model inputs and generated artifacts organized by pipeline stage; the public bracket STL lives under `model_data/target_shapes/`.
 - `initialFields/` - local initial-field files produced by the companion voxel planner.
 - `stlFiles/` - local STL files expected by default commands.
 - `output/` - generated checkpoints, geometry artifacts, evaluation files, paths, and related outputs.
