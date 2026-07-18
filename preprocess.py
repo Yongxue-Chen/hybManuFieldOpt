@@ -15,20 +15,27 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--input-stl",
         default=None,
-        help="Input STL path. Defaults to stlFiles/<model_name>.stl.",
+        help=(
+            "Input target-shape STL. Defaults to "
+            f"{pre_main.DEFAULT_STL_DIR}/<model_name>.stl."
+        ),
     )
     parser.add_argument(
         "--output-root",
         default=pre_main.DEFAULT_OUTPUT_ROOT,
         help=(
-            "Root folder for preprocessing outputs. A <model_name> subfolder is "
-            f"created by default (default: {pre_main.DEFAULT_OUTPUT_ROOT})."
+            "Parent folder for preprocessing results from multiple models. "
+            "The model name is appended automatically as a subfolder "
+            f"(default: {pre_main.DEFAULT_OUTPUT_ROOT})."
         ),
     )
     parser.add_argument(
         "--output-dir",
         default=None,
-        help="Exact output folder. Overrides --output-root/<model_name>.",
+        help=(
+            "Exact output folder for this model. When provided, it overrides "
+            "the automatically constructed <output-root>/<model_name> path."
+        ),
     )
     return parser
 

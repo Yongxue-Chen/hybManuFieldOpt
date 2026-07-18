@@ -66,6 +66,12 @@ initialFields/**
 !initialFields/README.md
 !initialFields/.gitkeep
 
+# Unified per-model data flow. Keep only the directory structure in Git.
+model_data/**
+!model_data/
+!model_data/*/
+!model_data/*/.gitkeep
+
 # Model checkpoints and tensor/data caches
 *.pth
 *.pt

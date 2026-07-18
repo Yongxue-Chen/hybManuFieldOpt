@@ -96,50 +96,48 @@ The commands above were tested from a newly created environment on 2026-07-18:
 The full workflow consists of eight stages. The config file is created first because several later scripts load manufacturing parameters, normalization scale, model capacity, loss weights, and time limits from `configs/config_multi_field_<model>.py`.
 
 ### 1. Create a Config File
-Choose a model name and create a matching config file. The `<model>` part must match the `--model_name` argument used by the scripts.
-
-For example, to create a config for `demo_bracket`:
+The included bracket demo already uses `configs/config_multi_field_bracket.py`, so no new config is needed. Run all bracket commands with:
 
 ```bash
-cp configs/config_multi_field_template.py configs/config_multi_field_demo_bracket.py
+--model_name bracket
 ```
 
-In general, the filename must follow `configs/config_multi_field_<model>.py`. The repository keeps `configs/__init__.py` so `configs` is an explicit Python package for imports such as `configs.config_multi_field_bracket`.
-
-The retained example configs currently share the same top-level variable set and differ mainly in model-specific values:
-
-- `MAX_TIME`: different initial-solution/planning horizon values.
-- `SCALE`: usually `100.0`, while `bracket` uses `150.0`.
-- `MANU_CONFIG['SMToolParas']`: tool dimensions change with `SCALE` and model setup.
-- `WEIGHTS` and allowed tolerances: tuned per model for the optimization objectives.
-- `JOINT_TRAIN_LR`: mostly `1e-4`, with `MBBSmooth` using `5e-5`.
-
-Edit the new config before running the pipeline. At minimum, check these values:
-
-- `SCALE`: physical model scale used to convert tool/support parameters into normalized coordinates.
-- `MANU_CONFIG`: additive and subtractive manufacturing parameters, especially `SMToolParas`.
-- `MAX_TIME`: the current time horizon. This can be an initial estimate before the voxel-based planner runs, but it should be updated after the initial solution is generated.
-- Network, pretraining, joint training, and loss-weight parameters if the model needs a different capacity or optimization setup.
-
-For `demo_bracket`, run later commands with:
+For any other model, create a matching config file. The `<model>` part must match the `--model_name` argument used by the scripts:
 
 ```bash
---model_name demo_bracket
+cp configs/config_multi_field_template.py configs/config_multi_field_your_model.py
 ```
+
+Then use `--model_name your_model` for that model.
+
+Edit the model config before running the pipeline. At minimum, check these values:
+
+- `MAX_TIME`: the maximum value of the time domain, determined by the initial solution.
+- `SCALE`: the target manufacturing size, corresponding to the longest edge of the model AABB.
+- `WEIGHTS`: the weights assigned to the individual loss terms.
+- `MANU_CONFIG`: the dimensions and parameter configuration of the manufacturing tools, especially `SMToolParas`.
+
+The filename must follow `configs/config_multi_field_<model>.py`. The repository keeps `configs/__init__.py` so `configs` is an explicit Python package for imports such as `configs.config_multi_field_bracket`.
 
 ### 2. Prepare STL and Supports
-Preprocessing reads a clean input STL, normalizes it, generates removable support geometry, unions the support with the body, and exports the support-removal plan.
+Preprocessing takes one target-shape STL and performs the following operations:
+
+1. Loads and validates the target mesh.
+2. Translates the minimum corner of its AABB to the origin and scales its longest AABB edge to `1.0`.
+3. Detects downward-facing overhang regions and samples support seed points.
+4. Generates collision-aware removable supports using the tool parameters from the model config.
+5. Boolean-unions the body and supports, repairs the exported meshes, and creates the ordered support-removal plan.
 
 Default input:
 
 ```text
-stlFiles/<model>.stl
+model_data/target_shapes/<model>.stl
 ```
 
 Default output:
 
 ```text
-outputs/preprocess/<model>/
+model_data/preprocessed/<model>/
 ```
 
 Run with the default paths:
@@ -153,26 +151,28 @@ Or specify the input STL and output location explicitly:
 ```bash
 conda run -n fieldopt_hm_rtx5090 python preprocess.py \
     --model_name bracket \
-    --input-stl demo_data/stl/bracket.stl \
-    --output-root outputs/preprocess
+    --input-stl model_data/target_shapes/bracket.stl \
+    --output-root model_data/preprocessed
 ```
 
-Use `--output-dir` when you want an exact output folder instead of `--output-root/<model>`:
+`--output-root` is the parent directory that collects preprocessing results for multiple models. The program automatically appends `/<model_name>` to it. For example, `--output-root model_data/preprocessed` with `--model_name bracket` writes to `model_data/preprocessed/bracket/`.
+
+Use `--output-dir` only when you want to provide the exact output directory yourself. It overrides the automatically constructed `<output-root>/<model_name>` path:
 
 ```bash
 conda run -n fieldopt_hm_rtx5090 python preprocess.py \
     --model_name bracket \
-    --input-stl demo_data/stl/bracket.stl \
-    --output-dir outputs/preprocess/bracket_test
+    --input-stl model_data/target_shapes/bracket.stl \
+    --output-dir model_data/preprocessed/bracket_test
 ```
 
-The preprocessing outputs are:
+The preprocessing outputs and their contents are:
 
 ```text
-outputs/preprocess/<model>/<model>_body_only.stl
-outputs/preprocess/<model>/<model>_support_only.stl
-outputs/preprocess/<model>/<model>_support.stl
-outputs/preprocess/<model>/<model>_removal_plan.json
+model_data/preprocessed/<model>/<model>_body_only.stl     normalized target body without supports
+model_data/preprocessed/<model>/<model>_support_only.stl  generated removable supports without the body
+model_data/preprocessed/<model>/<model>_support.stl       boolean union of the normalized body and supports
+model_data/preprocessed/<model>/<model>_removal_plan.json ordered support-removal positions and tool axes
 ```
 
 ### 3. Voxelization and SDF Preparation
@@ -183,15 +183,15 @@ To build a saved voxel geometry artifact:
 ```bash
 conda run -n fieldopt_hm_rtx5090 python build_saved_h_gpu.py \
     --model_name bracket \
-    --stl_path outputs/preprocess/bracket/bracket_support.stl \
-    --output_path output/bracket_H_gpu.pt
+    --stl_path model_data/preprocessed/bracket/bracket_support.stl \
+    --output_path model_data/implicit_representations/bracket/bracket_H_gpu.pt
 ```
 
 To train a neural/SIREN-style SDF checkpoint:
 
 ```bash
 conda run -n fieldopt_hm_rtx5090 python -m fieldopt.geometry.sdf.train_sdf \
-    --stl outputs/preprocess/bracket/bracket_support.stl \
+    --stl model_data/preprocessed/bracket/bracket_support.stl \
     --epochs 2000
 ```
 
@@ -297,36 +297,23 @@ conda run -n fieldopt_hm_rtx5090 python main_optimize.py \
 
 ## Input and Output Formats
 
-### STL Input
-- File type: `.stl`
-- Default preprocessing input: `stlFiles/<model>.stl`
-- Public demo input: `demo_data/stl/<model>.stl`
-- Default preprocessing output: `outputs/preprocess/<model>/`
-
-### Voxel / Initial Field Input
-The initial field is generated externally by `hybManuAccEro` and then consumed by this repository.
-
-- External repository: https://github.com/Yongxue-Chen/hybManuAccEro
-- Local folder: `initialFields/`
-- Public demo folder: `demo_data/initial_fields/<model>/`
-
-> TODO: document the exact converted initial-field filename and tensor/text format used by `fieldopt/utils/data_loader.py`.
-
-### Model Checkpoints and Geometry Artifacts
-- Pretrained checkpoints: `output/<model>_pretrained.pth` or demo equivalent.
-- Final optimized checkpoints: `output/<model>_final_trained.pth`.
-- Saved voxel geometry artifacts: `output/<model>_H_gpu.pt`.
-- Neural SDF checkpoints: `demo_data/checkpoints/<model>_sdf.pt` or a user-provided path.
-
-### Postprocessing Outputs
-Generated layers, paths, cached geometry artifacts, checkpoints, and related runtime files should be written under:
+All model-specific inputs and generated artifacts are organized under `model_data/`. Generated artifacts should use a model-named subdirectory so files from different models remain separate:
 
 ```text
-output/
-outputs/
+model_data/
+  target_shapes/                    input target STL files: <model>.stl
+  preprocessed/<model>/             normalized body, supports, union mesh, and removal plan
+  voxelized/<model>/                voxelized model files
+  implicit_representations/<model>/ neural SDF and voxel-backed H_gpu representations
+  initial_fields/<model>/           initial fields generated by external methods
+  pretrained_fields/<model>/        field parameters produced by pretraining
+  trained_fields/<model>/           field parameters produced by the full optimization
+  postprocessed/<model>/            generated layers and manufacturing paths
 ```
 
-These folders are ignored by Git except for placeholder files.
+`implicit_representations` and `initial_fields` separate the two kinds of data that were previously grouped together: geometry query representations belong in the former, while the initialized optimization fields belong in the latter.
+
+The generated contents of these folders are ignored by Git; only the directory structure is retained.
 
 ## Repository Structure
 

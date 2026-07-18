@@ -10,8 +10,9 @@ import os
 import sys
 
 MODEL_NAME = 'MBBSmooth'
-DEFAULT_STL_DIR = 'stlFiles'
-DEFAULT_OUTPUT_ROOT = 'outputs/preprocess'
+MODEL_DATA_ROOT = 'model_data'
+DEFAULT_STL_DIR = os.path.join(MODEL_DATA_ROOT, 'target_shapes')
+DEFAULT_OUTPUT_ROOT = os.path.join(MODEL_DATA_ROOT, 'preprocessed')
 SAMPLE_DENSITY = 3000
 R_SUPP = 1.5
 STEP_LEN = 5.0
