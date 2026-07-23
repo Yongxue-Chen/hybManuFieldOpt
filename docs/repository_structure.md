@@ -7,8 +7,7 @@ These scripts remain at the repository root because users run them directly:
 - `preprocess.py` - run support generation and preprocessing for a selected model.
 - `main_pre_train.py` - pretrain the neural fields from an initial field.
 - `main_optimize.py` - run the main continuous optimization.
-- `bayesian_weight_optimizer.py` - search loss weights and call the optimizer.
-- `bayesian_weight_optimizer_constrained.py` - constrained variant of Bayesian weight search.
+- `bayesian_weight_optimizer_constrained.py` - search constrained loss weights and call the optimizer.
 - `build_voxel_implicit.py` - build and save a voxel implicit representation.
 - `evaluate_model.py` - evaluate a trained checkpoint.
 - `postprocess.py` - generate layers and tool paths from a trained checkpoint.
@@ -36,11 +35,9 @@ Most implementation code lives under `fieldopt/`:
 
 ## Data and Output Placeholders
 
-- `model_data/` - model inputs and generated artifacts organized by pipeline stage; the public bracket STL lives under `model_data/target_shapes/`.
-- `initialFields/` - local initial-field files produced by the companion voxel planner.
+- `model_data/` - model inputs and generated artifacts organized by pipeline stage, including initial-field files produced by the companion voxel planner.
 - `stlFiles/` - local STL files expected by default commands.
 - `output/` - generated checkpoints, geometry artifacts, evaluation files, paths, and related outputs.
-- `examples/` - runnable examples and example-specific assets.
 - `assets/` - lightweight README and documentation assets.
 
 ## External Tool

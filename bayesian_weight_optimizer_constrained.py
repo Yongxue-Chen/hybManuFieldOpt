@@ -2,7 +2,7 @@
 Constrained Bayesian Optimization Framework for Weight Tuning
 =============================================================
 
-与 bayesian_weight_optimizer.py 相同，但施加以下硬约束（不修改任何 config 文件）：
+使用 Optuna TPE 搜索 loss weights，并施加以下硬约束（不修改任何 config 文件）：
 
   - final_state 的 weight 固定为 1.0，不进入搜索空间
   - operation_volume 的 weight 固定为 1.5，不进入搜索空间
@@ -10,13 +10,9 @@ Constrained Bayesian Optimization Framework for Weight Tuning
   - 自由变量（3个）：self_support、AM_Collision_Free、structure
   - BAYESIAN_METRIC_TARGETS 与 config 保持一致，动态加载
 
-命名区分：
-  - 输出文件夹:     output/bo_results_{MODEL_NAME}_constrained
-  - Study 名称:     weight_opt_{MODEL_NAME}_constrained
-
 Usage:
-    conda run -n myenv python bayesian_weight_optimizer_constrained.py
-    conda run -n myenv python bayesian_weight_optimizer_constrained.py --dry_run --n_trials 5 --model_name LBracket
+    conda run -n fieldopt_hm_rtx5090 python bayesian_weight_optimizer_constrained.py --model_name bracket
+    conda run -n fieldopt_hm_rtx5090 python bayesian_weight_optimizer_constrained.py --dry_run --n_trials 5 --model_name bracket
 """
 
 import torch
@@ -38,7 +34,7 @@ from datetime import datetime
 # ==============================================================================
 
 N_TRIALS = 50
-MODEL_NAME = 'LBracket'  # Default, can be overridden by --model_name
+MODEL_NAME = 'bracket'
 
 EXCLUDE_FROM_EVAL = [
     'structure_simp_penalty',
@@ -107,16 +103,18 @@ def apply_hard_constraints(weights_dict: dict) -> dict:
 # ==============================================================================
 
 def run_training(weights_dict: dict, shared_H_gpu=None, shared_struc_loss_calculator=None,
-                 joint_batch_size=None) -> tuple:
+                 joint_batch_size=None, main_optimize_args=None) -> tuple:
     """
     Run one full training session with the given weights and return
     (loss_dict, metrics_dict, model_state_dict).
     """
     from main_optimize import main
+    import builtins
     import sys
 
     old_argv = sys.argv
-    sys.argv = ['main_optimize.py']
+    original_print = builtins.print
+    sys.argv = ['main_optimize.py', *(main_optimize_args or [])]
 
     try:
         return main(
@@ -129,6 +127,7 @@ def run_training(weights_dict: dict, shared_H_gpu=None, shared_struc_loss_calcul
         )
     finally:
         sys.argv = old_argv
+        builtins.print = original_print
 
 
 # ==============================================================================
@@ -243,7 +242,11 @@ def compute_metric_objective(metrics_dict: dict, metric_targets: dict) -> tuple:
         else:
             normalized[name] = actual / target if target > 0 else 0.0
 
-        if (name == "self_support_ratio" or name == "final_state_accuracy" or name == "AM_Collision_Free") and normalized[name] > 1.002:
+        if name in {
+            "self_support_ratio",
+            "final_state_accuracy",
+            "AM_collision_free_ratio",
+        } and normalized[name] > 1.002:
             normalized[name] = normalized[name] * 5.0
 
     max_norm = max(normalized.values()) if normalized else 0.0
@@ -703,6 +706,11 @@ def run_optimization(
     joint_batch_size=None,
     geometry_backend='voxel_artifact',
     geometry_artifact_path=None,
+    resolution=100,
+    pretrain_model_path=None,
+    stl_path=None,
+    joint_epochs=None,
+    steps_per_epoch=None,
 ):
     """
     Run the constrained Bayesian optimization loop.
@@ -726,29 +734,46 @@ def run_optimization(
         _cfg = _imp.import_module(f'configs.config_multi_field_{MODEL_NAME}')
         from fieldopt.geometry.backend import load_geometry_function
         from fieldopt.geometry.voxel.voxelization import get_normalization_parameters
-        from fieldopt.losses.structure_loss_torch import StructureLossCalculatorTorch as StructureLossCalculator
+        from fieldopt.losses.structure_loss_torch import StructureLossCalculatorTorch
+        from fieldopt.losses.structure_loss_torch_sm_force import (
+            StructureLossCalculatorTorchSMForce,
+        )
 
-        stl_path = f'stlFiles/{MODEL_NAME}.stl'
-        _, p_min, spaceBox = get_normalization_parameters(stl_path)
+        effective_stl_path = stl_path or os.path.join(
+            'model_data', 'preprocessed', MODEL_NAME, f'{MODEL_NAME}_support.stl'
+        )
+        effective_pretrain_model_path = pretrain_model_path or os.path.join(
+            'model_data',
+            'pretrained_fields',
+            MODEL_NAME,
+            f'{MODEL_NAME}_pretrained_{resolution}.pth',
+        )
+        for label, path in (
+            ('preprocessed STL', effective_stl_path),
+            ('pretrained checkpoint', effective_pretrain_model_path),
+        ):
+            if not os.path.isfile(path):
+                raise FileNotFoundError(f"{label} not found: {path}")
+
+        _, p_min, spaceBox = get_normalization_parameters(effective_stl_path)
         spaceBox[0] = spaceBox[0] - p_min
         spaceBox[1] = spaceBox[1] - p_min
         aabb_min = spaceBox[0]
         aabb_max = spaceBox[1]
 
-        HRes = getattr(_cfg, 'HRES', 512)
         shared_H_gpu = load_geometry_function(
             backend=geometry_backend,
-            stl_path=stl_path,
+            stl_path=effective_stl_path,
             model_name=MODEL_NAME,
             artifact_path=geometry_artifact_path,
             device=_cfg.DEVICE,
-            voxel_resolution=HRes,
+            voxel_resolution=resolution,
         )
         print(f"[BayesOpt-Constrained] Shared geometry backend ready: {geometry_backend}")
 
         print("[BayesOpt-Constrained] Creating shared StructureLossCalculator...")
         normalizedSize = (aabb_max - aabb_min) / max(aabb_max - aabb_min)
-        shared_struc_loss_calculator = StructureLossCalculator(
+        common_structure_kwargs = dict(
             physical_size=normalizedSize,
             max_resolution=_cfg.PARAS_STRUCTURE['max_resolution'],
             batch_size=_cfg.PARAS_STRUCTURE['time_check_size'],
@@ -758,8 +783,25 @@ def run_optimization(
             grad_clip_threshold=_cfg.PARAS_STRUCTURE['grad_clip_threshold'],
             grad_scale=_cfg.PARAS_STRUCTURE['grad_scale'],
             use_total_mass=_cfg.PARAS_STRUCTURE['use_total_mass'],
-            max_displacement=_cfg.PARAS_STRUCTURE['max_displacement']
+            device=_cfg.DEVICE,
         )
+        if _cfg.PARAS_STRUCTURE.get(
+            'use_sm_cutting_force_structure', False
+        ):
+            shared_struc_loss_calculator = StructureLossCalculatorTorchSMForce(
+                **common_structure_kwargs,
+                sm_cutting_force_magnitude=_cfg.PARAS_STRUCTURE.get(
+                    'sm_cutting_force_magnitude', 0.0
+                ),
+                sm_max_displacement_norm=_cfg.PARAS_STRUCTURE[
+                    'sm_max_displacement_norm'
+                ],
+            )
+        else:
+            shared_struc_loss_calculator = StructureLossCalculatorTorch(
+                **common_structure_kwargs,
+                max_displacement=_cfg.PARAS_STRUCTURE['max_displacement'],
+            )
         print("[BayesOpt-Constrained] Compiling _solve_cg with torch.compile (this may take a while)...")
         shared_struc_loss_calculator._solve_cg = torch.compile(
             shared_struc_loss_calculator._solve_cg,
@@ -768,6 +810,23 @@ def run_optimization(
         print("[BayesOpt-Constrained] Shared StructureLossCalculator ready.")
 
         _original_training_fn = training_fn
+        main_optimize_args = [
+            '--resolution', str(resolution),
+            '--stl-path', effective_stl_path,
+            '--pretrain-model-path', effective_pretrain_model_path,
+            '--tmp-model-path', os.path.join(output_dir, 'current_trial_tmp.pth'),
+            '--geometry_backend', geometry_backend,
+        ]
+        if geometry_artifact_path:
+            main_optimize_args.extend(
+                ['--geometry_artifact_path', geometry_artifact_path]
+            )
+        if joint_epochs is not None:
+            main_optimize_args.extend(['--joint-epochs', str(joint_epochs)])
+        if steps_per_epoch is not None:
+            main_optimize_args.extend(
+                ['--steps-per-epoch', str(steps_per_epoch)]
+            )
 
         def training_fn(weights_dict):
             return _original_training_fn(
@@ -775,6 +834,7 @@ def run_optimization(
                 shared_H_gpu=shared_H_gpu,
                 shared_struc_loss_calculator=shared_struc_loss_calculator,
                 joint_batch_size=joint_batch_size,
+                main_optimize_args=main_optimize_args,
             )
 
     # --- Optuna Study Setup ---
@@ -1074,19 +1134,63 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--output_dir", type=str, default=None,
-        help="Output directory (default: output/bo_results_<MODEL_NAME>_constrained)"
+        help=(
+            "Output directory. Defaults to "
+            "model_data/trained_fields/<model>/bayesian_optimization."
+        ),
     )
     parser.add_argument(
         "--model_name", type=str, default=MODEL_NAME,
         help=f"Model name to use (default: {MODEL_NAME})"
     )
     parser.add_argument(
-        "--batch_size", type=int, default=180000,
-        help="Override JOINT_BATCH_CONFIG['batch_size'] when running Bayesian optimization."
+        "--batch_size", type=int, default=None,
+        help=(
+            "Optional JOINT_BATCH_CONFIG['batch_size'] override. "
+            "By default, use the model config."
+        ),
+    )
+    parser.add_argument(
+        "--resolution", type=int, default=100,
+        help="Voxel resolution used by the geometry representation (default: 100)."
+    )
+    parser.add_argument(
+        "--pretrain-model-path", "--pretrain_model_path",
+        dest="pretrain_model_path", default=None,
+        help=(
+            "Pretrained checkpoint passed to main_optimize.py. Defaults to "
+            "model_data/pretrained_fields/<model>/<model>_pretrained_<resolution>.pth."
+        ),
+    )
+    parser.add_argument(
+        "--stl-path", "--stl_path", dest="stl_path", default=None,
+        help=(
+            "Preprocessed support STL. Defaults to "
+            "model_data/preprocessed/<model>/<model>_support.stl."
+        ),
+    )
+    parser.add_argument(
+        "--joint-epochs", "--joint_epochs", dest="joint_epochs",
+        type=int, default=None,
+        help="Optional main_optimize.py epoch override; default uses the model config.",
+    )
+    parser.add_argument(
+        "--steps-per-epoch", "--steps_per_epoch", dest="steps_per_epoch",
+        type=int, default=None,
+        help="Optional main_optimize.py steps-per-epoch override; default uses the model config.",
     )
     add_geometry_backend_args(parser)
 
     args = parser.parse_args()
+    for option, value in (
+        ('--n_trials', args.n_trials),
+        ('--resolution', args.resolution),
+        ('--batch_size', args.batch_size),
+        ('--joint-epochs', args.joint_epochs),
+        ('--steps-per-epoch', args.steps_per_epoch),
+    ):
+        if value is not None and value <= 0:
+            parser.error(f"{option} must be a positive integer")
 
     # Apply model name and update dependent configs
     MODEL_NAME = args.model_name
@@ -1114,7 +1218,12 @@ if __name__ == "__main__":
     study_name = f"weight_opt_{MODEL_NAME}_constrained"
 
     if args.output_dir is None:
-        args.output_dir = f"output/bo_results_{MODEL_NAME}_constrained"
+        args.output_dir = os.path.join(
+            'model_data',
+            'trained_fields',
+            MODEL_NAME,
+            'bayesian_optimization',
+        )
 
     if args.dry_run:
         print("🧪 DRY RUN MODE: Using dummy training function")
@@ -1139,4 +1248,9 @@ if __name__ == "__main__":
         joint_batch_size=args.batch_size,
         geometry_backend=args.geometry_backend,
         geometry_artifact_path=args.geometry_artifact_path,
+        resolution=args.resolution,
+        pretrain_model_path=args.pretrain_model_path,
+        stl_path=args.stl_path,
+        joint_epochs=args.joint_epochs,
+        steps_per_epoch=args.steps_per_epoch,
     )

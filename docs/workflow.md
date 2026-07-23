@@ -60,7 +60,6 @@ The pretrained network is refined through Bayesian optimization, which calls `ma
 
 Relevant entry points:
 
-- `bayesian_weight_optimizer.py`
 - `bayesian_weight_optimizer_constrained.py`
 - `main_optimize.py`
 

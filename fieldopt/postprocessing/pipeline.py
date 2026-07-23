@@ -42,6 +42,7 @@ def run_pipeline(
     *,
     # Model / STL
     stl_dir: str = 'stlFiles',
+    stl_path: Optional[str] = None,
     device: Optional[str] = None,
     voxel_resolution: int = 512,
     geometry_backend: str = 'voxel_artifact',
@@ -97,6 +98,8 @@ def run_pipeline(
         stl_dir (str):
             Directory containing the ground-truth STL file (named <config_name>.stl).
             Used for normalization and coordinate scaling.
+        stl_path (str, optional):
+            Explicit preprocessed support STL path. Overrides ``stl_dir``.
         device (str, optional):
             Computation device, e.g., 'cuda:0' or 'cpu'. If None, uses the device defined in config.
         voxel_resolution (int):
@@ -230,7 +233,7 @@ def run_pipeline(
     t0 = time.perf_counter()
     ctx = load_model_and_config(
         config_name, model_path,
-        stl_dir=stl_dir, device=device,
+        stl_dir=stl_dir, stl_path=stl_path, device=device,
         voxel_resolution=voxel_resolution,
         geometry_backend=geometry_backend,
         geometry_artifact_path=geometry_artifact_path,

@@ -62,12 +62,21 @@ def read_initial_field(file_path, center_path, get_difference):
     return bounding_box, t_end, points, field1_values, field2_values
 
 if __name__ == '__main__':
-    # Example of how to use this function
-    # Make sure the file path is correct
-    file_path = 'initialFields/fertility100_afterPre10_tool10_local10_AccEro_field.txt'
+    file_path = (
+        'model_data/initial_fields/bracket/'
+        'bracket_res100_initial_fields.txt'
+    )
+    center_path = (
+        'model_data/initial_fields/bracket/'
+        'bracket_res100_centers.txt'
+    )
     
     try:
-        bbox, t, pts, vals1, vals2 = read_initial_field(file_path)
+        bbox, t, pts, vals1, vals2 = read_initial_field(
+            file_path,
+            center_path,
+            get_difference=False,
+        )
 
         print("Bounding Box:", bbox)
         print("t_end:", t)
@@ -83,4 +92,4 @@ if __name__ == '__main__':
     except FileNotFoundError:
         print(f"Error: File '{file_path}' not found. Please check the path.")
     except Exception as e:
-        print(f"Error occurred while reading file: {e}") 
+        print(f"Error occurred while reading file: {e}")

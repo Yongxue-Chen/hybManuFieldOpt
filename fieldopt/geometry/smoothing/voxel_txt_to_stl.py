@@ -33,13 +33,13 @@ voxel_txt_to_stl.py
 --------
 # 最简单的用法（全用默认参数，推荐）
 python fieldopt/geometry/voxel_txt_to_stl.py \\
-    --input  initialFields/boneTPMS/boneTPMS_res80_voxels.txt \\
-    --output output/boneTPMS_smooth.stl
+    --input  model_data/initial_fields/bracket/bracket_res100_voxels.txt \\
+    --output demo_runs/bracket_smooth.stl
 
 # 更光滑（增加 Taubin 迭代次数）
 python fieldopt/geometry/voxel_txt_to_stl.py \\
-    --input  initialFields/fertility/fertility_res80_voxels.txt \\
-    --output output/fertility_smooth.stl \\
+    --input  model_data/initial_fields/bracket/bracket_res100_voxels.txt \\
+    --output demo_runs/bracket_smooth.stl \\
     --smooth-iterations 50
 """
 

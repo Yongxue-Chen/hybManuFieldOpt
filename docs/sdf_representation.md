@@ -37,7 +37,7 @@ conda run -n myenv python main_optimize.py \
     --geometry_artifact_path model_data/implicit_representations/bracket/bracket_sdf.pt
 ```
 
-The same flags are available in `evaluate_model.py`, `bayesian_weight_optimizer.py`, `bayesian_weight_optimizer_constrained.py`, and `fieldopt.postprocessing`.
+The same flags are available in `evaluate_model.py`, `bayesian_weight_optimizer_constrained.py`, and `fieldopt.postprocessing`.
 
 ## Release Notes
 

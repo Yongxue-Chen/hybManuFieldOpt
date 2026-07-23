@@ -49,7 +49,9 @@ def load_model_and_config(
     Returns:
         PostprocessContext with all fields populated.
     """
-    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    project_root = os.path.dirname(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    )
     if project_root not in sys.path:
         sys.path.insert(0, project_root)
 
@@ -96,6 +98,19 @@ def load_model_and_config(
         num_time_frequencies_DT=cfg.NUM_TIME_FREQUENCIES_DT,
         dropout_rate_fieldDT=cfg.DROPOUT_RATE_FIELDDT,
     ).to(device)
+    if not os.path.isfile(model_path):
+        raise FileNotFoundError(f"Trained model checkpoint not found: {model_path}")
+    load_result = model.load_state_dict(
+        torch.load(model_path, map_location=device, weights_only=True),
+        strict=False,
+    )
+    if load_result.missing_keys or load_result.unexpected_keys:
+        raise RuntimeError(
+            "Trained checkpoint does not match the current model: "
+            f"missing={load_result.missing_keys}, "
+            f"unexpected={load_result.unexpected_keys}"
+        )
+    model.eval()
 
     check_func = load_geometry_function(
         backend=geometry_backend,
