@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Project page for Field Optimization for Scalable and Distortion-Aware Process Planning in Hybrid Additive-Subtractive Manufacturing."
+    />
+    <meta name="theme-color" content="#f4f1ea" />
+    <title>FieldOpt-HM | Project Page</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+    <script src="script.js" defer></script>
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="#top" aria-label="FieldOpt-HM home">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span>FieldOpt-HM</span>
+      </a>
+      <button
+        class="nav-toggle"
+        type="button"
+        aria-expanded="false"
+        aria-controls="site-navigation"
+      >
+        <span class="sr-only">Open navigation</span>
+        <span></span><span></span>
+      </button>
+      <nav id="site-navigation" class="site-nav" aria-label="Main navigation">
+        <a href="#overview">Overview</a>
+        <a href="#method">Method</a>
+        <a href="#results">Results</a>
+        <a href="#citation">Citation</a>
+      </nav>
+    </header>
+
+    <main id="top">
+      <section class="hero">
+        <div class="hero-glow hero-glow-one" aria-hidden="true"></div>
+        <div class="hero-glow hero-glow-two" aria-hidden="true"></div>
+        <div class="hero-content">
+          <!-- TODO: Replace with the venue and year. -->
+          <p class="eyebrow">Project page · Venue / Year</p>
+          <h1>
+            Field Optimization for Scalable and Distortion-Aware Process
+            Planning in Hybrid Additive-Subtractive Manufacturing
+          </h1>
+
+          <!-- TODO: Update names, links, affiliations, and author notes. -->
+          <p class="authors">
+            Yongxue Chen · Tao Liu · Aoran Lyu · Yu Jiang · Neelotpal Dutta ·
+            Charlie C.L. Wang
+          </p>
+          <p class="affiliations">The University of Manchester</p>
+
+          <div class="action-row" aria-label="Project resources">
+            <!-- TODO: Replace # with the final URLs. -->
+            <a class="button button-primary" href="#">Paper</a>
+            <a
+              class="button button-secondary"
+              href="https://github.com/Yongxue-Chen/fieldOpt_HM"
+              >Code</a
+            >
+            <a class="button button-secondary" href="#">Video</a>
+          </div>
+        </div>
+      </section>
+
+      <section class="section section-feature" aria-labelledby="teaser-title">
+        <div class="section-heading">
+          <p class="kicker">At a glance</p>
+          <h2 id="teaser-title">Project teaser</h2>
+        </div>
+        <!-- TODO: Replace this block with an image or video. See WEB_GUIDE.md. -->
+        <div class="media-placeholder media-placeholder-wide">
+          <span>Teaser image / overview video</span>
+          <small>Recommended ratio: 16:7</small>
+        </div>
+        <p class="caption">
+          Add a concise caption that explains the central idea shown above.
+        </p>
+      </section>
+
+      <section id="overview" class="section split-section">
+        <div class="section-heading sticky-heading">
+          <p class="kicker">Overview</p>
+          <h2>What problem does the project solve?</h2>
+        </div>
+        <div class="prose">
+          <!-- TODO: Replace with the final abstract or project summary. -->
+          <p class="lead">
+            Use this section for a short, accessible summary of the problem,
+            the main insight, and the contribution.
+          </p>
+          <p>
+            Keep the first paragraph understandable to a broad graphics and
+            manufacturing audience. A second paragraph can introduce the
+            technical formulation, constraints, and the most important result.
+          </p>
+          <ul class="contribution-list">
+            <li><span>01</span>State the first key contribution.</li>
+            <li><span>02</span>State the second key contribution.</li>
+            <li><span>03</span>State the main experimental finding.</li>
+          </ul>
+        </div>
+      </section>
+
+      <section id="method" class="section">
+        <div class="section-heading">
+          <p class="kicker">Method</p>
+          <h2>Continuous field optimization pipeline</h2>
+          <p>
+            Introduce the method figure first, then explain its stages in a few
+            focused steps.
+          </p>
+        </div>
+        <!-- TODO: Replace with the final pipeline figure. -->
+        <div class="media-placeholder media-placeholder-method">
+          <span>Method / pipeline figure</span>
+          <small>Recommended ratio: 2:1</small>
+        </div>
+        <div class="step-grid">
+          <article>
+            <span class="step-number">01</span>
+            <h3>Input & representation</h3>
+            <p>Describe the target geometry and its implicit representation.</p>
+          </article>
+          <article>
+            <span class="step-number">02</span>
+            <h3>Field optimization</h3>
+            <p>Describe the learnable fields, objectives, and constraints.</p>
+          </article>
+          <article>
+            <span class="step-number">03</span>
+            <h3>Manufacturing plan</h3>
+            <p>Describe how optimized fields become layers and tool paths.</p>
+          </article>
+        </div>
+      </section>
+
+      <section id="results" class="section section-results">
+        <div class="section-heading">
+          <p class="kicker">Results</p>
+          <h2>Selected experiments</h2>
+          <p>
+            Replace these cards with representative qualitative and
+            quantitative results.
+          </p>
+        </div>
+        <div class="result-grid">
+          <figure class="result-card result-card-large">
+            <div class="media-placeholder"><span>Primary result</span></div>
+            <figcaption>
+              Explain the model, comparison, and the conclusion readers should
+              draw.
+            </figcaption>
+          </figure>
+          <figure class="result-card">
+            <div class="media-placeholder"><span>Ablation / comparison</span></div>
+            <figcaption>Add a short result caption.</figcaption>
+          </figure>
+          <figure class="result-card">
+            <div class="media-placeholder"><span>Physical validation</span></div>
+            <figcaption>Add a short result caption.</figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section class="section video-section">
+        <div>
+          <p class="kicker">Presentation</p>
+          <h2>Watch the project video</h2>
+          <p>
+            Embed a YouTube or Vimeo video here, or link to a downloadable MP4.
+          </p>
+        </div>
+        <!-- TODO: Replace with an iframe. See WEB_GUIDE.md. -->
+        <div class="media-placeholder media-placeholder-video">
+          <span>Video embed</span>
+          <small>Recommended ratio: 16:9</small>
+        </div>
+      </section>
+
+      <section id="citation" class="section citation-section">
+        <div class="section-heading">
+          <p class="kicker">Citation</p>
+          <h2>Cite this work</h2>
+        </div>
+        <div class="citation-card">
+          <!-- TODO: Replace this placeholder BibTeX after publication. -->
+          <pre><code id="bibtex">@article{chen_fieldopt_todo,
+  title   = {Field Optimization for Scalable and Distortion-Aware
+             Process Planning in Hybrid Additive-Subtractive Manufacturing},
+  author  = {Chen, Yongxue and others},
+  journal = {TODO},
+  year    = {TODO}
+}</code></pre>
+          <button class="copy-button" type="button" data-copy-target="bibtex">
+            Copy BibTeX
+          </button>
+        </div>
+      </section>
+
+      <section class="section contact-section">
+        <div>
+          <p class="kicker">Contact</p>
+          <h2>Questions about the project?</h2>
+        </div>
+        <div class="contact-links">
+          <a href="mailto:yongxue.chen@manchester.ac.uk">
+            Yongxue Chen
+            <span>yongxue.chen@manchester.ac.uk</span>
+          </a>
+          <a href="mailto:charlie.wang@manchester.ac.uk">
+            Charlie C.L. Wang
+            <span>charlie.wang@manchester.ac.uk</span>
+          </a>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <p>FieldOpt-HM · <span id="current-year"></span></p>
+      <a href="#top">Back to top ↑</a>
+    </footer>
+  </body>
+</html>
