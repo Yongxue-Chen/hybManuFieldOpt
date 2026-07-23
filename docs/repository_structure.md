@@ -9,7 +9,7 @@ These scripts remain at the repository root because users run them directly:
 - `main_optimize.py` - run the main continuous optimization.
 - `bayesian_weight_optimizer.py` - search loss weights and call the optimizer.
 - `bayesian_weight_optimizer_constrained.py` - constrained variant of Bayesian weight search.
-- `build_saved_h_gpu.py` - build a saved voxel geometry artifact.
+- `build_voxel_implicit.py` - build and save a voxel implicit representation.
 - `evaluate_model.py` - evaluate a trained checkpoint.
 - `postprocess.py` - generate layers and tool paths from a trained checkpoint.
 

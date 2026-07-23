@@ -661,7 +661,7 @@ def load_sdf_implicit_function(stl_file: str, device: str = 'cuda', checkpoint_p
             sdf_values    : ``torch.Tensor`` of shape ``(N, 1)``, dtype float32.
                             Raw SDF output (negative inside, positive outside).
     """
-    from .train_sdf import SDFNet, normalise_pts  # lazy import
+    from .sdf.train_sdf import SDFNet, normalise_pts  # lazy import
 
     # ── Derive checkpoint path ────────────────────────────────────────────────
     abs_stl = os.path.abspath(stl_file)

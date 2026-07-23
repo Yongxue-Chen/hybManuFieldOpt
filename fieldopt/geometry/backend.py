@@ -43,7 +43,10 @@ def normalize_geometry_backend(backend: str | None) -> str:
 def default_geometry_artifact_path(model_name: str, backend: str) -> str | None:
     backend = normalize_geometry_backend(backend)
     if backend == "voxel_artifact":
-        return f"output/{model_name}_H_gpu.pt"
+        return (
+            "model_data/implicit_representations/"
+            f"{model_name}/{model_name}_voxel_implicit.pt"
+        )
     if backend == "siren":
         return f"stlFiles/{model_name}_sdf.pt"
     return None
@@ -90,7 +93,7 @@ def load_geometry_function(
         if not os.path.isfile(artifact_path):
             raise FileNotFoundError(
                 f"Saved voxel H_gpu artifact not found: {artifact_path}\n"
-                "Build it first with build_saved_h_gpu.py, or use --geometry_backend voxel/siren."
+                "Build it first with build_voxel_implicit.py, or use --geometry_backend voxel/siren."
             )
         print(f"[geometry] Loading voxel artifact: {artifact_path}")
         return load_pure_pytorch_implicit_function(artifact_path, device=device)
@@ -121,7 +124,8 @@ def add_geometry_backend_args(parser, *, default_backend: str = "voxel_artifact"
         choices=["voxel_artifact", "voxel", "siren", "neural_sdf"],
         default=default_backend,
         help=(
-            "Implicit geometry backend. 'voxel_artifact' loads output/<model>_H_gpu.pt; "
+            "Implicit geometry backend. 'voxel_artifact' loads "
+            "model_data/implicit_representations/<model>/<model>_voxel_implicit.pt; "
             "'voxel' rebuilds from STL; 'siren'/'neural_sdf' loads a trained SDF checkpoint."
         ),
     )

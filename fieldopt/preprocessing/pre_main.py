@@ -12,7 +12,7 @@ import sys
 MODEL_NAME = 'MBBSmooth'
 MODEL_DATA_ROOT = 'model_data'
 DEFAULT_STL_DIR = os.path.join(MODEL_DATA_ROOT, 'target_shapes')
-DEFAULT_OUTPUT_ROOT = os.path.join(MODEL_DATA_ROOT, 'preprocessed')
+DEFAULT_OUTPUT_ROOT = os.path.join('demo_runs', 'preprocessed')
 SAMPLE_DENSITY = 3000
 R_SUPP = 1.5
 STEP_LEN = 5.0
@@ -171,14 +171,43 @@ def export_removal_plan(paths, output_path):
 
 
 def _export_stl(mesh, output_path, label):
-    exported = _repair_mesh(mesh)
+    source = mesh.copy()
+    repaired = _repair_mesh(source)
+
+    source_score = _mesh_quality_score(source)
+    repaired_score = _mesh_quality_score(repaired)
+    if repaired_score <= source_score:
+        exported = repaired
+    else:
+        exported = source
+        print(
+            f"  Skip export repair for {label}: geometry quality would regress "
+            f"from {source_score} to {repaired_score}."
+        )
+
     exported.export(output_path)
+
+    # STL serialization discards vertex sharing, so validate the file after
+    # reloading it instead of trusting only the in-memory mesh properties.
+    saved = trimesh.load_mesh(output_path)
+    source_is_single_volume = (
+        _component_count(source) == 1
+        and source.is_watertight
+        and source.is_volume
+    )
+    if source_is_single_volume:
+        if not saved.is_watertight or not saved.is_volume:
+            raise RuntimeError(
+                f"{label} became invalid after export: path={output_path}, "
+                f"watertight={saved.is_watertight}, is_volume={saved.is_volume}."
+            )
+
     print(
         f"{label} 已导出: path={output_path}, "
-        f"faces={len(exported.faces)}, "
-        f"components={_component_count(exported)}, "
-        f"watertight={exported.is_watertight}, "
-        f"is_volume={exported.is_volume}"
+        f"faces={len(saved.faces)}, "
+        f"components={_component_count(saved)}, "
+        f"watertight={saved.is_watertight}, "
+        f"is_volume={saved.is_volume}"
     )
 
 

@@ -60,6 +60,11 @@ forFigures/
 forVideo/
 tmp/
 
+# Disposable outputs produced by the independent README demo commands.
+demo_runs/**
+!demo_runs/
+!demo_runs/.gitkeep
+
 # Legacy preprocessed/generated data directories
 initialFields/**
 !initialFields/
@@ -100,6 +105,15 @@ model_data/**
 
 # Track the public bracket demo input in the unified model-data layout.
 !model_data/target_shapes/bracket.stl
+
+# Track the author-provided preprocessed bracket model used by later demos.
+!model_data/preprocessed/bracket/
+!model_data/preprocessed/bracket/bracket_support.stl
+
+# Track the author-provided bracket implicit representations.
+!model_data/implicit_representations/bracket/
+!model_data/implicit_representations/bracket/bracket_voxel_implicit.pt
+!model_data/implicit_representations/bracket/bracket_siren_sdf.pt
 
 # Keep placeholder docs in legacy/default data directories.
 !stlFiles/

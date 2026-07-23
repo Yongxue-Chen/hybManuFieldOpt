@@ -1,16 +1,17 @@
 """
 Offline training script: trains a small MLP to represent the Signed Distance
-Field (SDF) of a given STL mesh and saves the result to
-    stlFiles/<model_name>_sdf.pt
+Field (SDF) of a given STL mesh and saves a reusable checkpoint.
 
 A Signed Distance Field convention:
     SDF < 0  →  point is inside the model
     SDF > 0  →  point is outside the model
 
 Usage (run from the project root):
-    conda run -n myenv python -m fieldopt.geometry.sdf.train_sdf --stl stlFiles/bracket.stl
+    conda run -n fieldopt_hm_rtx5090 python -m fieldopt.geometry.sdf.train_sdf \
+        --stl model_data/preprocessed/bracket/bracket_support.stl \
+        --output-path demo_runs/implicit_representations/bracket/bracket_siren_sdf.pt
     conda run -n myenv python -m fieldopt.geometry.sdf.train_sdf \
-        --stl stlFiles/bracket.stl --epochs 3000 --device cuda
+        --stl model_data/preprocessed/bracket/bracket_support.stl --epochs 3000 --device cuda
 
 Public symbols used by other modules:
     SDFNet            – the MLP architecture
@@ -976,6 +977,7 @@ def sdf_sign_loss(
 
 def train(
     stl_file: str,
+    output_path: str | None = None,
     epochs: int = 800,
     batch_size: int = 0,
     lr: float = 1e-4,
@@ -1021,7 +1023,12 @@ def train(
     abs_stl = os.path.abspath(stl_file)
     stl_dir = os.path.dirname(abs_stl)
     stl_name = os.path.splitext(os.path.basename(abs_stl))[0]
-    save_path = os.path.join(stl_dir, f"{stl_name}_sdf.pt")
+    save_path = (
+        os.path.abspath(output_path)
+        if output_path
+        else os.path.join(stl_dir, f"{stl_name}_sdf.pt")
+    )
+    os.makedirs(os.path.dirname(save_path), exist_ok=True)
 
     print(f"\n{'='*60}")
     print(f"Training SDF network for : {stl_file}")
@@ -1830,20 +1837,33 @@ if __name__ == "__main__":
             "Train a neural SDF for an STL file, then optionally visualise the result.\n\n"
             "Examples:\n"
             "  # Train only:\n"
-            "  conda run -n myenv python -m fieldopt.geometry.sdf.train_sdf --stl stlFiles/bracket.stl\n\n"
+            "  conda run -n fieldopt_hm_rtx5090 python -m fieldopt.geometry.sdf.train_sdf "
+            "--stl model_data/preprocessed/bracket/bracket_support.stl "
+            "--output-path demo_runs/implicit_representations/bracket/bracket_siren_sdf.pt\n\n"
             "  # Train for STL replacement / point queries:\n"
-            "  conda run -n myenv python -m fieldopt.geometry.sdf.train_sdf "
-            "--stl stlFiles/bracket.stl --optimize_for geometry_query\n\n"
+            "  conda run -n fieldopt_hm_rtx5090 python -m fieldopt.geometry.sdf.train_sdf "
+            "--stl model_data/preprocessed/bracket/bracket_support.stl "
+            "--optimize_for geometry_query\n\n"
             "  # Train + visualise (opens matplotlib slices + trimesh viewer):\n"
-            "  conda run -n myenv python -m fieldopt.geometry.sdf.train_sdf "
-            "--stl stlFiles/bracket.stl --visualise\n\n"
+            "  conda run -n fieldopt_hm_rtx5090 python -m fieldopt.geometry.sdf.train_sdf "
+            "--stl model_data/preprocessed/bracket/bracket_support.stl --visualise\n\n"
             "  # Visualise a previously trained checkpoint (no retraining):\n"
-            "  conda run -n myenv python -m fieldopt.geometry.sdf.train_sdf "
-            "--stl stlFiles/bracket.stl --visualise --skip_train"
+            "  conda run -n fieldopt_hm_rtx5090 python -m fieldopt.geometry.sdf.train_sdf "
+            "--stl model_data/preprocessed/bracket/bracket_support.stl "
+            "--visualise --skip_train"
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument("--stl",             required=True,            help="Path to the input STL file")
+    parser.add_argument(
+        "--output-path",
+        "--output_path",
+        dest="output_path",
+        default=None,
+        help=(
+            "Checkpoint output path. Defaults to <stl_dir>/<stl_name>_sdf.pt."
+        ),
+    )
     parser.add_argument(
         "--optimize_for",
         default="balanced",
@@ -1994,6 +2014,7 @@ if __name__ == "__main__":
     if not args.skip_train:
         train(
             stl_file=args.stl,
+            output_path=args.output_path,
             epochs=args.epochs,
             batch_size=args.batch_size,
             lr=args.lr,
