@@ -21,7 +21,7 @@ from fieldopt.geometry.voxel.voxelization import get_normalization_parameters
 
 import importlib
 DEFAULT_MODEL_NAME = 'bracket'
-RESOLUTION = 150
+DEFAULT_RESOLUTION = 100
 
 cfg = None
 
@@ -690,17 +690,123 @@ def main():
         default=0.2,
         help="Validation split ratio (default: 0.2 = 20%% validation, 80%% training)."
     )
+    parser.add_argument(
+        '--resolution',
+        type=int,
+        default=DEFAULT_RESOLUTION,
+        help=(
+            "Resolution used in the default input and output filenames "
+            f"(default: {DEFAULT_RESOLUTION})."
+        ),
+    )
+    parser.add_argument(
+        '--initial-field-path',
+        '--initial_field_path',
+        dest='initial_field_path',
+        default=None,
+        help=(
+            "Initial-field input. Defaults to "
+            "model_data/initial_fields/<model>/<model>_res<resolution>_initial_fields.txt."
+        ),
+    )
+    parser.add_argument(
+        '--centers-path',
+        '--centers_path',
+        dest='centers_path',
+        default=None,
+        help=(
+            "Voxel-center input. Defaults to "
+            "model_data/initial_fields/<model>/<model>_res<resolution>_centers.txt."
+        ),
+    )
+    parser.add_argument(
+        '--stl-path',
+        '--stl_path',
+        dest='stl_path',
+        default=None,
+        help=(
+            "Preprocessed body-and-support STL used for the normalized AABB. "
+            "Defaults to model_data/preprocessed/<model>/<model>_support.stl."
+        ),
+    )
+    parser.add_argument(
+        '--output-path',
+        '--output_path',
+        dest='output_path',
+        default=None,
+        help=(
+            "Pretrained checkpoint output. Defaults to "
+            "model_data/pretrained_fields/<model>/<model>_pretrained_<resolution>.pth."
+        ),
+    )
+    parser.add_argument(
+        '--pretrain-epochs',
+        '--pretrain_epochs',
+        dest='pretrain_epochs',
+        type=int,
+        default=None,
+        help=(
+            "Optional override for TRAINING_CONFIG['pretrain_epochs']; "
+            "use a small value for a quick README test."
+        ),
+    )
     args = parser.parse_args()
 
     global cfg
     model_name = args.model_name
+    resolution = args.resolution
+    if resolution <= 0:
+        parser.error("--resolution must be a positive integer")
+    if not 0.0 < args.val_split < 1.0:
+        parser.error("--val_split must be between 0 and 1")
+    if args.pretrain_epochs is not None and args.pretrain_epochs <= 0:
+        parser.error("--pretrain-epochs must be a positive integer")
+
     cfg = importlib.import_module(f'configs.config_multi_field_{model_name}')
+    if args.pretrain_epochs is not None:
+        cfg.TRAINING_CONFIG['pretrain_epochs'] = args.pretrain_epochs
 
     experiment = None
     # --- 1. Load and prepare data ---
-    initial_field_path = f'initialFields/{model_name}/{model_name}_res{RESOLUTION}_initial_fields.txt'
-    center_path = f'initialFields/{model_name}/{model_name}_res{RESOLUTION}_centers.txt'
-    stl_path = f'stlFiles/{model_name}.stl'
+    initial_field_path = args.initial_field_path or os.path.join(
+        'model_data',
+        'initial_fields',
+        model_name,
+        f'{model_name}_res{resolution}_initial_fields.txt',
+    )
+    center_path = args.centers_path or os.path.join(
+        'model_data',
+        'initial_fields',
+        model_name,
+        f'{model_name}_res{resolution}_centers.txt',
+    )
+    stl_path = args.stl_path or os.path.join(
+        'model_data',
+        'preprocessed',
+        model_name,
+        f'{model_name}_support.stl',
+    )
+    pretrain_model_path = args.output_path or os.path.join(
+        'model_data',
+        'pretrained_fields',
+        model_name,
+        f'{model_name}_pretrained_{resolution}.pth',
+    )
+
+    for label, path in (
+        ('initial field', initial_field_path),
+        ('voxel centers', center_path),
+        ('preprocessed STL', stl_path),
+    ):
+        if not os.path.isfile(path):
+            parser.error(f"{label} file not found: {path}")
+
+    print("Pretraining inputs:")
+    print(f"  initial field : {initial_field_path}")
+    print(f"  voxel centers : {center_path}")
+    print(f"  support STL   : {stl_path}")
+    print(f"  resolution    : {resolution}")
+    print(f"Pretraining output: {pretrain_model_path}")
 
     # aabb_min, aabb_max = get_sdf_aabb(stl_path)
     # spaceBox = np.array([aabb_min, aabb_max])
@@ -932,8 +1038,6 @@ def main():
     val_alphaT2_2 = valid_alphaT2_M2_tensor[val_indices_2]
     
     # --- 3. Pre-training ---
-    if not os.path.exists('output'):
-        os.makedirs('output')
 
     # 3.1 Pre-train field 1 - fit train_vals1
     print("\n=== Training Field 1 to fit train_vals1 ===")
@@ -1015,7 +1119,7 @@ def main():
     eval_result_M2 = evaluate_mask_field(model, M2_val_pts, M2_val_labels, field_type='fieldM2')
     
     # --- 5. Save model and normalization parameters ---
-    pretrain_model_path = f'output/{model_name}_pretrained_{RESOLUTION}.pth'
+    os.makedirs(os.path.dirname(os.path.abspath(pretrain_model_path)), exist_ok=True)
     torch.save(model.state_dict(), pretrain_model_path)
     print(f"\n✅ Pre-trained model saved to '{pretrain_model_path}'")
 if __name__ == '__main__':

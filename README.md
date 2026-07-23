@@ -394,10 +394,61 @@ MAX_TIME = 190
 The included `configs/config_multi_field_bracket.py` already uses `MAX_TIME = 190`.
 
 ### 6. Pretrain
-Pretraining initializes the neural fields from the voxelized geometry and the initial field.
+
+Pretraining initializes the five neural fields from the author-provided initial solution. The default bracket inputs are:
+
+```text
+model_data/initial_fields/bracket/bracket_res100_initial_fields.txt
+model_data/initial_fields/bracket/bracket_res100_centers.txt
+model_data/preprocessed/bracket/bracket_support.stl
+```
+
+The initial-field file supplies the AM and SM operation orders, the centers file maps voxel indices to normalized coordinates, and the support STL supplies the normalized model AABB. The voxel occupancy file from step 4 is not read directly during pretraining.
+
+Run a short one-epoch demo:
 
 ```bash
-conda run -n fieldopt_hm_rtx5090 python main_pre_train.py --model_name bracket
+conda run -n fieldopt_hm_rtx5090 python main_pre_train.py \
+    --model_name bracket \
+    --resolution 100 \
+    --pretrain-epochs 1 \
+    --output-path demo_runs/pretrained_fields/bracket/bracket_pretrained_100.pth
+```
+
+The demo reads the files under `model_data/` and writes:
+
+```text
+demo_runs/pretrained_fields/bracket/bracket_pretrained_100.pth
+```
+
+This one-epoch command verifies the complete loading, training, and checkpoint-saving path; it is not intended to produce a converged pretrained model. Omit `--pretrain-epochs` to use the production epoch count from `configs/config_multi_field_<model>.py`.
+
+For a production run, omit the demo epoch override and output path:
+
+```bash
+conda run -n fieldopt_hm_rtx5090 python main_pre_train.py \
+    --model_name bracket \
+    --resolution 100
+```
+
+The default production output is:
+
+```text
+model_data/pretrained_fields/bracket/bracket_pretrained_100.pth
+```
+
+The pre-generated bracket checkpoint uses the same path. Pretrained `.pth` checkpoints are large artifacts and are intentionally ignored by Git; they remain under the local `model_data/pretrained_fields/<model>/` layout rather than being uploaded to the repository.
+
+All paths can be overridden explicitly:
+
+```bash
+conda run -n fieldopt_hm_rtx5090 python main_pre_train.py \
+    --model_name <model> \
+    --resolution <resolution> \
+    --initial-field-path /path/to/initial_fields.txt \
+    --centers-path /path/to/centers.txt \
+    --stl-path /path/to/model_support.stl \
+    --output-path /path/to/pretrained.pth
 ```
 
 ### 7. Optimize
