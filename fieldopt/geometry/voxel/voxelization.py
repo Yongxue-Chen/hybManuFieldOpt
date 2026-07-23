@@ -1,3 +1,4 @@
+import argparse
 import pyvista as pv
 import numpy as np
 import trimesh
@@ -58,7 +59,7 @@ def _pyvista_surface_to_trimesh(surface_mesh):
     """
     Convert a triangulated PyVista surface mesh to a Trimesh object.
     """
-    surface_mesh = surface_mesh.extract_surface().triangulate()
+    surface_mesh = surface_mesh.extract_surface(algorithm=None).triangulate()
     faces = surface_mesh.faces.reshape(-1, 4)[:, 1:]
     return trimesh.Trimesh(
         vertices=np.asarray(surface_mesh.points),
@@ -80,7 +81,7 @@ def _split_surface_bodies(surface_mesh):
         block = split[i]
         if block is None or block.n_points == 0:
             continue
-        body = block.extract_surface().triangulate()
+        body = block.extract_surface(algorithm=None).triangulate()
         if body.n_points == 0:
             continue
         bodies.append(body)
@@ -116,7 +117,7 @@ def get_normalization_parameters(stl_file):
             - scale (float): The scale factor for normalization.
             - translation (np.ndarray): The translation vector (p_min) for normalization.
     """
-    mesh = pv.read(stl_file).extract_surface()
+    mesh = pv.read(stl_file).extract_surface(algorithm=None)
     bounds = mesh.bounds
     p_min = np.array([bounds[0], bounds[2], bounds[4]])
     dims = np.array([bounds[1] - bounds[0], bounds[3] - bounds[2], bounds[5] - bounds[4]])
@@ -149,13 +150,13 @@ def create_voxelization(stl_file, resolution=100):
     scale, p_min_translation, _ = get_normalization_parameters(stl_file)
 
     # Load and extract geometry with PyVista
-    mesh = pv.read(stl_file).extract_geometry()
+    mesh = pv.read(stl_file).extract_surface(algorithm=None)
 
     # Normalize mesh to [0,1] range
     normalized_mesh = mesh.copy()
     normalized_mesh.translate(-p_min_translation, inplace=True)
     normalized_mesh.scale([scale, scale, scale], inplace=True)
-    normalized_surface = normalized_mesh.extract_surface().triangulate()
+    normalized_surface = normalized_mesh.extract_surface(algorithm=None).triangulate()
     
     # Create voxel grid
     norm_bounds = normalized_surface.bounds
@@ -370,45 +371,58 @@ def write_voxel_centers_txt(voxel_centers, filename, aabb_min, aabb_max):
         for c in sorted_centers:
             f.write(f"{c[0]:.6f},{c[1]:.6f},{c[2]:.6f}\n")
 
-if __name__ == "__main__":
-    MODEL_NAME = 'bracket'
-    resolution = 140  # Voxelization resolution
 
-    stl_path = f"stlFiles/{MODEL_NAME}.stl"
+def voxelize_and_write(
+    *,
+    model_name,
+    stl_path,
+    resolution=100,
+    output_root=os.path.join("demo_runs", "initial_fields"),
+    output_dir=None,
+    write_surface=False,
+    surface_error_samples=50000,
+):
+    """Voxelize an STL and write the files used by the planning pipeline."""
+    if resolution <= 0:
+        raise ValueError("resolution must be a positive integer")
+    if not os.path.isfile(stl_path):
+        raise FileNotFoundError(f"Input STL not found: {stl_path}")
+
+    output_dir = output_dir or os.path.join(output_root, model_name)
+    os.makedirs(output_dir, exist_ok=True)
+    voxel_matrix_path = os.path.join(
+        output_dir, f"{model_name}_res{resolution}_voxels.txt"
+    )
+    voxel_centers_path = os.path.join(
+        output_dir, f"{model_name}_res{resolution}_centers.txt"
+    )
 
     print(f"Processing {stl_path} with resolution {resolution}...")
-    
-    # Generate voxel data and get the normalized bounds
-    cropped_voxel, voxel_centers, norm_bounds = create_voxelization(stl_path, resolution)
+    cropped_voxel, voxel_centers, norm_bounds = create_voxelization(
+        stl_path, resolution
+    )
+    if cropped_voxel.size == 0 or voxel_centers.size == 0:
+        raise RuntimeError(f"Voxelization produced no occupied voxels for {stl_path}")
 
-    # --- Create output directory and define paths ---
-    output_dir = f"initialFields/{MODEL_NAME}"
-    os.makedirs(output_dir, exist_ok=True)
-    base_filename = os.path.splitext(os.path.basename(stl_path))[0]
-    
-    voxel_matrix_path = os.path.join(output_dir, f"{base_filename}_res{resolution}_voxels.txt")
-    voxel_centers_path = os.path.join(output_dir, f"{base_filename}_res{resolution}_centers.txt")
-    voxel_surface_path = os.path.join(output_dir, f"{base_filename}_res{resolution}_voxel_surface.stl")
+    print(f"Writing voxel matrix to {voxel_matrix_path}...")
+    writeVoxelMatrix(cropped_voxel, voxel_matrix_path)
 
-    # --- Write Voxel Matrix ---
-    if cropped_voxel.size > 0:
-        print(f"Writing voxel matrix to {voxel_matrix_path}...")
-        writeVoxelMatrix(cropped_voxel, voxel_matrix_path)
-    else:
-        print("Voxel matrix is empty, not writing to file.")
+    aabb_min = np.array([norm_bounds[0], norm_bounds[2], norm_bounds[4]])
+    aabb_max = np.array([norm_bounds[1], norm_bounds[3], norm_bounds[5]])
+    print(f"Writing voxel centers to {voxel_centers_path}...")
+    write_voxel_centers_txt(
+        voxel_centers, voxel_centers_path, aabb_min, aabb_max
+    )
 
-    # --- Write Voxel Centers and Normalized AABB ---
-    if voxel_centers.size > 0:
-        aabb_min = np.array([norm_bounds[0], norm_bounds[2], norm_bounds[4]])
-        aabb_max = np.array([norm_bounds[1], norm_bounds[3], norm_bounds[5]])
-        
-        print(f"Writing voxel centers to {voxel_centers_path}...")
-        write_voxel_centers_txt(voxel_centers, voxel_centers_path, aabb_min, aabb_max)
-    else:
-        print("Voxel centers are empty, not writing to file.")
+    outputs = {
+        "voxel_matrix": voxel_matrix_path,
+        "voxel_centers": voxel_centers_path,
+    }
 
-    # --- Write Voxelized Surface and Normalized Surface Error ---
-    if cropped_voxel.size > 0 and voxel_centers.size > 0:
+    if write_surface:
+        voxel_surface_path = os.path.join(
+            output_dir, f"{model_name}_res{resolution}_voxel_surface.stl"
+        )
         spacing_val = 1.0 / resolution
         print(f"Writing voxelized surface mesh to {voxel_surface_path}...")
         voxel_surface = write_voxel_surface_stl(
@@ -417,8 +431,13 @@ if __name__ == "__main__":
             spacing_val,
             voxel_surface_path,
         )
+        outputs["voxel_surface"] = voxel_surface_path
 
-        error_stats = compute_voxel_surface_error(stl_path, voxel_surface)
+        error_stats = compute_voxel_surface_error(
+            stl_path,
+            voxel_surface,
+            sample_count=surface_error_samples,
+        )
         if error_stats is not None:
             print("\nVoxelized surface -> original surface error (normalized [0,1] scale):")
             print(f"  Surface samples for mean : {error_stats['sample_count']:,}")
@@ -430,7 +449,85 @@ if __name__ == "__main__":
             print(f"  Max error * resolution   : {error_stats['max_error'] * resolution:.8f}")
         else:
             print("Could not compute voxelized surface error.")
-    else:
-        print("Voxel surface is empty, not writing surface mesh or error stats.")
-        
-    print("Processing complete.") 
+
+    print("Processing complete.")
+    return outputs
+
+
+def _build_cli_parser():
+    parser = argparse.ArgumentParser(
+        description=(
+            "Voxelize a preprocessed body-and-support STL for hybManuAccEro."
+        )
+    )
+    parser.add_argument(
+        "--model-name",
+        "--model_name",
+        dest="model_name",
+        default="bracket",
+        help="Model name used for the default input, output directory, and filenames.",
+    )
+    parser.add_argument(
+        "--stl-path",
+        "--stl_path",
+        dest="stl_path",
+        default=None,
+        help=(
+            "Input STL. Defaults to "
+            "model_data/preprocessed/<model>/<model>_support.stl."
+        ),
+    )
+    parser.add_argument(
+        "--resolution",
+        type=int,
+        default=100,
+        help="Voxel resolution along the normalized longest AABB edge (default: 100).",
+    )
+    parser.add_argument(
+        "--output-root",
+        "--output_root",
+        dest="output_root",
+        default=os.path.join("demo_runs", "initial_fields"),
+        help=(
+            "Parent output directory; <model_name> is appended automatically "
+            "(default: demo_runs/initial_fields)."
+        ),
+    )
+    parser.add_argument(
+        "--output-dir",
+        "--output_dir",
+        dest="output_dir",
+        default=None,
+        help="Exact output directory; overrides --output-root.",
+    )
+    parser.add_argument(
+        "--write-surface",
+        action="store_true",
+        help="Also write a diagnostic voxel-surface STL and report surface error.",
+    )
+    parser.add_argument(
+        "--surface-error-samples",
+        type=int,
+        default=50000,
+        help="Surface samples used for error reporting with --write-surface.",
+    )
+    return parser
+
+
+if __name__ == "__main__":
+    args = _build_cli_parser().parse_args()
+    input_stl = args.stl_path or os.path.join(
+        "model_data",
+        "preprocessed",
+        args.model_name,
+        f"{args.model_name}_support.stl",
+    )
+    voxelize_and_write(
+        model_name=args.model_name,
+        stl_path=input_stl,
+        resolution=args.resolution,
+        output_root=args.output_root,
+        output_dir=args.output_dir,
+        write_surface=args.write_surface,
+        surface_error_samples=args.surface_error_samples,
+    )

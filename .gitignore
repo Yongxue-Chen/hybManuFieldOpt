@@ -21,6 +21,7 @@ ENV/
 .vscode/
 .idea/
 .cursor/
+AGENTS.md
 *.sublime-workspace
 *.sublime-project
 
@@ -114,6 +115,12 @@ model_data/**
 !model_data/implicit_representations/bracket/
 !model_data/implicit_representations/bracket/bracket_voxel_implicit.pt
 !model_data/implicit_representations/bracket/bracket_siren_sdf.pt
+
+# Track the author-provided bracket voxelization and initial-field results.
+!model_data/initial_fields/bracket/
+!model_data/initial_fields/bracket/bracket_res100_voxels.txt
+!model_data/initial_fields/bracket/bracket_res100_centers.txt
+!model_data/initial_fields/bracket/bracket_res100_initial_fields.txt
 
 # Keep placeholder docs in legacy/default data directories.
 !stlFiles/

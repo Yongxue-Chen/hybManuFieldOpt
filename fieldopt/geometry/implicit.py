@@ -643,10 +643,12 @@ def load_sdf_implicit_function(stl_file: str, device: str = 'cuda', checkpoint_p
     and return a query callable with the same interface as
     ``create_pure_pytorch_implicit_function``.
 
-    The checkpoint must exist at  ``<stl_dir>/<stl_name>_sdf.pt``.
-    Run the training script first if it is missing:
+    Both current SDFNet checkpoints and legacy ``siren-pytorch`` checkpoints
+    containing ``model_state_dict`` are supported.
 
-        conda run -n myenv python fieldopt/geometry/sdf/train_sdf.py --stl <path>
+    Run the training script first if the checkpoint is missing:
+
+        conda run -n fieldopt_hm_rtx5090 python -m fieldopt.geometry.sdf.train_sdf --stl <path>
 
     Args:
         stl_file: Path to the STL file (used to derive the checkpoint path when
@@ -673,7 +675,8 @@ def load_sdf_implicit_function(stl_file: str, device: str = 'cuda', checkpoint_p
         raise FileNotFoundError(
             f"SDF checkpoint not found: {ckpt_path}\n"
             f"Please train it first:\n"
-            f"  conda run -n myenv python fieldopt/geometry/sdf/train_sdf.py --stl {stl_file}"
+            "  conda run -n fieldopt_hm_rtx5090 python "
+            f"-m fieldopt.geometry.sdf.train_sdf --stl {stl_file}"
         )
 
     print('\n' + '=' * 50)
@@ -681,18 +684,66 @@ def load_sdf_implicit_function(stl_file: str, device: str = 'cuda', checkpoint_p
 
     # ── Load checkpoint ───────────────────────────────────────────────────────
     ckpt = torch.load(ckpt_path, map_location=device, weights_only=False)
-    net = SDFNet(
-        fourier_L=ckpt['fourier_L'],
-        hidden_dim=ckpt['hidden_dim'],
-        n_hidden=ckpt['n_hidden'],
-    ).to(device)
-    net.load_state_dict(ckpt['state_dict'])
+    if 'state_dict' in ckpt:
+        net = SDFNet(
+            fourier_L=ckpt['fourier_L'],
+            hidden_dim=ckpt['hidden_dim'],
+            n_hidden=ckpt['n_hidden'],
+        ).to(device)
+        net.load_state_dict(ckpt['state_dict'])
+
+        aabb_min_t = torch.tensor(ckpt['aabb_min'], dtype=torch.float32, device=device)
+        aabb_max_t = torch.tensor(ckpt['aabb_max'], dtype=torch.float32, device=device)
+
+        def normalise_query_points(points: torch.Tensor) -> torch.Tensor:
+            return normalise_pts(points, aabb_min_t, aabb_max_t)
+
+        format_description = (
+            f"SDFNet (L={ckpt['fourier_L']}, "
+            f"hidden={ckpt['hidden_dim']}×{ckpt['n_hidden']})"
+        )
+    elif 'model_state_dict' in ckpt:
+        from siren_pytorch import SirenNet
+
+        state_dict = ckpt['model_state_dict']
+        layer_indices = {
+            int(key.split('.')[1])
+            for key in state_dict
+            if key.startswith('layers.') and key.endswith('.weight')
+        }
+        first_weight = state_dict['layers.0.weight']
+        last_weight = state_dict['last_layer.weight']
+        net = SirenNet(
+            int(first_weight.shape[1]),
+            int(first_weight.shape[0]),
+            int(last_weight.shape[0]),
+            len(layer_indices),
+            w0=30,
+            w0_initial=30,
+        ).to(device)
+        net.load_state_dict(state_dict)
+
+        mesh = trimesh.load_mesh(abs_stl, force='mesh')
+        bounds = torch.tensor(mesh.bounds, dtype=torch.float32, device=device)
+        centre = 0.5 * (bounds[0] + bounds[1])
+        half_longest_edge = 0.5 * (bounds[1] - bounds[0]).max()
+        if half_longest_edge <= 0:
+            raise ValueError(f"STL has a degenerate AABB: {stl_file}")
+
+        def normalise_query_points(points: torch.Tensor) -> torch.Tensor:
+            return (points - centre) / half_longest_edge
+
+        format_description = (
+            f"legacy SirenNet (hidden={first_weight.shape[0]}×{len(layer_indices)})"
+        )
+    else:
+        raise ValueError(
+            f"Unsupported SDF checkpoint format: {ckpt_path}. "
+            "Expected 'state_dict' or 'model_state_dict'."
+        )
+
     net.eval()
-
-    aabb_min_t = torch.tensor(ckpt['aabb_min'], dtype=torch.float32, device=device)
-    aabb_max_t = torch.tensor(ckpt['aabb_max'], dtype=torch.float32, device=device)
-
-    print(f"SDFNet loaded  (L={ckpt['fourier_L']}, hidden={ckpt['hidden_dim']}×{ckpt['n_hidden']})")
+    print(f"{format_description} loaded")
     print('=' * 50 + '\n')
 
     def sdf_query(points: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
@@ -712,7 +763,7 @@ def load_sdf_implicit_function(stl_file: str, device: str = 'cuda', checkpoint_p
             points = points.to(device)
 
         with torch.no_grad():
-            x_norm = normalise_pts(points, aabb_min_t, aabb_max_t)
+            x_norm = normalise_query_points(points)
             sdf_values = net(x_norm)                        # (N, 1)
 
         # Negative SDF → inside the model (1.0), positive → outside (0.0)

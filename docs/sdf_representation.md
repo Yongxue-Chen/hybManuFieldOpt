@@ -10,7 +10,7 @@ The returned callable keeps the existing `H_gpu` / `check_func` interface, so do
 
 - `voxel_artifact` (default): loads `model_data/implicit_representations/<model>/<model>_voxel_implicit.pt`.
 - `voxel`: rebuilds the voxel-backed implicit function directly from `stlFiles/<model>.stl`.
-- `siren` / `neural_sdf`: loads the trained neural SDF checkpoint. By default this looks for `stlFiles/<model>_sdf.pt`, or an explicit checkpoint can be passed with `--geometry_artifact_path`.
+- `siren` / `neural_sdf`: loads `model_data/implicit_representations/<model>/<model>_siren_sdf.pt`, or an explicit checkpoint can be passed with `--geometry_artifact_path`.
 
 ## Command Examples
 

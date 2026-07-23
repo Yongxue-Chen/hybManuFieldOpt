@@ -1,0 +1,2 @@
+# Preserve externally generated initial-field datasets byte-for-byte.
+model_data/initial_fields/bracket/*.txt binary

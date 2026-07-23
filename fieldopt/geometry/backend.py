@@ -48,7 +48,10 @@ def default_geometry_artifact_path(model_name: str, backend: str) -> str | None:
             f"{model_name}/{model_name}_voxel_implicit.pt"
         )
     if backend == "siren":
-        return f"stlFiles/{model_name}_sdf.pt"
+        return (
+            "model_data/implicit_representations/"
+            f"{model_name}/{model_name}_siren_sdf.pt"
+        )
     return None
 
 
