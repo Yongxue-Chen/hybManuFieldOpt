@@ -360,13 +360,38 @@ Voxel indices start from `0`. An `AM_order` or `SM_order` greater than the endin
 The remaining `hybManuAccEro` and initial-field conversion instructions will be added after that workflow is finalized.
 
 ### 5. Update the Config Time Horizon
-After the initial field is generated, update the model config with the final planning horizon from the initial solution. In the code this time horizon is currently represented by `MAX_TIME` in:
+
+After `hybManuAccEro` generates the initial field, read the ending operation sequence number from the third line of:
+
+```text
+model_data/initial_fields/<model>/<model>_res<resolution>_initial_fields.txt
+```
+
+Calculate `MAX_TIME` with:
+
+```text
+MAX_TIME = ceil(0.02 × ending operation sequence number)
+```
+
+Write the resulting integer value in:
 
 ```text
 configs/config_multi_field_<model>.py
 ```
 
-This corresponds to the `tEnd`/end-time value used by the optimization pipeline. If `MAX_TIME` is too small, the normalized second time field can become invalid; if it is much too large, training becomes unnecessarily loose.
+For the provided bracket result, the third line is `9500`, so:
+
+```text
+ceil(0.02 × 9500) = 190
+```
+
+Therefore the bracket config contains:
+
+```python
+MAX_TIME = 190
+```
+
+The included `configs/config_multi_field_bracket.py` already uses `MAX_TIME = 190`.
 
 ### 6. Pretrain
 Pretraining initializes the neural fields from the voxelized geometry and the initial field.
