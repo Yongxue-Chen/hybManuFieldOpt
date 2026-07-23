@@ -451,18 +451,85 @@ conda run -n fieldopt_hm_rtx5090 python main_pre_train.py \
     --output-path /path/to/pretrained.pth
 ```
 
-### 7. Optimize
-Run Bayesian optimization to search loss weights and call the main continuous optimizer:
+### 7. Optimize with Fixed Weights
 
-```bash
-conda run -n fieldopt_hm_rtx5090 python bayesian_weight_optimizer.py --model_name bracket
+`main_optimize.py` performs joint optimization with a specified set of loss weights. By default it uses `WEIGHTS` from:
+
+```text
+configs/config_multi_field_<model>.py
 ```
 
-Or run the main optimizer directly:
+For bracket, it automatically reads the results provided by the earlier steps:
+
+```text
+model_data/pretrained_fields/bracket/bracket_pretrained_100.pth
+model_data/preprocessed/bracket/bracket_support.stl
+model_data/implicit_representations/bracket/bracket_voxel_implicit.pt
+```
+
+Run a one-epoch, one-step integration demo:
 
 ```bash
-conda run -n fieldopt_hm_rtx5090 python main_optimize.py --model_name bracket
+conda run -n fieldopt_hm_rtx5090 python main_optimize.py \
+    --model_name bracket \
+    --resolution 100 \
+    --joint-epochs 1 \
+    --steps-per-epoch 1 \
+    --batch-size 4096 \
+    --tmp-model-path demo_runs/trained_fields/bracket/bracket_tmp.pth \
+    --output-path demo_runs/trained_fields/bracket/bracket_final_trained.pth
 ```
+
+The default geometry backend is `voxel_artifact`, so the command above automatically loads the provided voxel implicit representation. The demo executes the complete data-generation, geometry-query, loss, backward, optimizer, and checkpoint-saving path. Its first run may take longer while the CUDA structure solver is compiled.
+
+The demo outputs are:
+
+```text
+demo_runs/trained_fields/bracket/bracket_tmp.pth
+demo_runs/trained_fields/bracket/bracket_final_trained.pth
+```
+
+To use the SIREN SDF representation instead, add:
+
+```bash
+--geometry_backend siren
+```
+
+The matching `model_data/implicit_representations/bracket/bracket_siren_sdf.pt` checkpoint is selected automatically.
+
+For a production run with the config's epoch, step, batch-size, and weight settings, run:
+
+```bash
+conda run -n fieldopt_hm_rtx5090 python main_optimize.py \
+    --model_name bracket \
+    --resolution 100
+```
+
+The default production output is:
+
+```text
+model_data/trained_fields/bracket/bracket_final_trained.pth
+```
+
+To override selected fixed weights, provide a JSON object. Terms not listed in the file retain their values from the model config:
+
+```json
+{
+  "self_support": 35.0,
+  "AM_Collision_Free": 69.0,
+  "structure": 2.0
+}
+```
+
+Run with:
+
+```bash
+conda run -n fieldopt_hm_rtx5090 python main_optimize.py \
+    --model_name bracket \
+    --weights-json /path/to/weights.json
+```
+
+This is fixed-weight optimization; it does not search for weights. Input and output paths can be overridden with `--pretrain-model-path`, `--stl-path`, `--geometry_artifact_path`, `--tmp-model-path`, and `--output-path`.
 
 ### 8. Evaluate and Postprocess
 Evaluate a trained checkpoint:

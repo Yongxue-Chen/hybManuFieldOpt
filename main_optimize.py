@@ -19,7 +19,8 @@ from fieldopt.geometry.backend import add_geometry_backend_args, load_geometry_f
 
 import importlib
 
-MODEL_NAME = 'MBBSmoothSupport'  # Default model name for config loading
+MODEL_NAME = 'bracket'
+DEFAULT_RESOLUTION = 100
 BATCH_SIZE = None
 
 def main(weights_dict=None, quiet=False, model_name=None, shared_H_gpu=None,
@@ -51,16 +52,26 @@ def main(weights_dict=None, quiet=False, model_name=None, shared_H_gpu=None,
 
     parser = argparse.ArgumentParser(description="Train or fine-tune a multi field model from scratch.")
     parser.add_argument(
+        '--tmp-model-path',
         '--tmp_model_path',
-        type=str,
-        default='output/multi_field_model_tmp.pth',
-        help="Path to save the temporary model."
-    )
-    parser.add_argument(
-        '--weights_json',
+        dest='tmp_model_path',
         type=str,
         default=None,
-        help="Path to a JSON file containing WEIGHTS overrides (used by Bayesian optimizer)."
+        help=(
+            "Temporary checkpoint path. Defaults to the final output directory "
+            "with filename <model>_tmp.pth."
+        ),
+    )
+    parser.add_argument(
+        '--weights-json',
+        '--weights_json',
+        dest='weights_json',
+        type=str,
+        default=None,
+        help=(
+            "Optional JSON file containing fixed WEIGHTS overrides. "
+            "Unspecified terms keep their config values."
+        ),
     )
     parser.add_argument(
         '--model_name',
@@ -68,32 +79,170 @@ def main(weights_dict=None, quiet=False, model_name=None, shared_H_gpu=None,
         default=None,
         help="Model name to load config (e.g. 'TPMS50', 'GLman'). Overrides module-level MODEL_NAME."
     )
+    parser.add_argument(
+        '--resolution',
+        type=int,
+        default=DEFAULT_RESOLUTION,
+        help=(
+            "Resolution used in the default pretrained-checkpoint filename "
+            f"(default: {DEFAULT_RESOLUTION})."
+        ),
+    )
+    parser.add_argument(
+        '--pretrain-model-path',
+        '--pretrain_model_path',
+        dest='pretrain_model_path',
+        default=None,
+        help=(
+            "Pretrained checkpoint. Defaults to "
+            "model_data/pretrained_fields/<model>/<model>_pretrained_<resolution>.pth."
+        ),
+    )
+    parser.add_argument(
+        '--stl-path',
+        '--stl_path',
+        dest='stl_path',
+        default=None,
+        help=(
+            "Preprocessed body-and-support STL. Defaults to "
+            "model_data/preprocessed/<model>/<model>_support.stl."
+        ),
+    )
+    parser.add_argument(
+        '--output-path',
+        '--output_path',
+        dest='output_path',
+        default=None,
+        help=(
+            "Final trained checkpoint. Defaults to "
+            "model_data/trained_fields/<model>/<model>_final_trained.pth."
+        ),
+    )
+    parser.add_argument(
+        '--joint-epochs',
+        '--joint_epochs',
+        dest='joint_epochs',
+        type=int,
+        default=None,
+        help="Optional override for JOINT_VIRTUAL_EPOCHS.",
+    )
+    parser.add_argument(
+        '--steps-per-epoch',
+        '--steps_per_epoch',
+        dest='steps_per_epoch',
+        type=int,
+        default=None,
+        help="Optional override for JOINT_BATCH_CONFIG['steps_per_epoch'].",
+    )
+    parser.add_argument(
+        '--batch-size',
+        '--batch_size',
+        dest='batch_size',
+        type=int,
+        default=None,
+        help="Optional joint-training batch-size override.",
+    )
     add_geometry_backend_args(parser)
     
     args = parser.parse_args()
 
-    joint_batch_size = BATCH_SIZE
-
     # Determine model name and load config
     effective_model_name = model_name or args.model_name or MODEL_NAME
     cfg = importlib.import_module(f'configs.config_multi_field_{effective_model_name}')
-    pretrain_model_path = f'output/{effective_model_name}_pretrained.pth'
-    joint_model_path = f'output/{effective_model_name}_final_trained.pth'
+    resolution = args.resolution
+    if resolution <= 0:
+        parser.error("--resolution must be a positive integer")
+    for option, value in (
+        ('--joint-epochs', args.joint_epochs),
+        ('--steps-per-epoch', args.steps_per_epoch),
+        ('--batch-size', args.batch_size),
+    ):
+        if value is not None and value <= 0:
+            parser.error(f"{option} must be a positive integer")
+
+    pretrain_model_path = args.pretrain_model_path or os.path.join(
+        'model_data',
+        'pretrained_fields',
+        effective_model_name,
+        f'{effective_model_name}_pretrained_{resolution}.pth',
+    )
+    stl_path = args.stl_path or os.path.join(
+        'model_data',
+        'preprocessed',
+        effective_model_name,
+        f'{effective_model_name}_support.stl',
+    )
+    joint_model_path = args.output_path or os.path.join(
+        'model_data',
+        'trained_fields',
+        effective_model_name,
+        f'{effective_model_name}_final_trained.pth',
+    )
+    tmp_model_path = args.tmp_model_path or os.path.join(
+        os.path.dirname(joint_model_path),
+        f'{effective_model_name}_tmp.pth',
+    )
+
+    for label, path in (
+        ('pretrained checkpoint', pretrain_model_path),
+        ('preprocessed STL', stl_path),
+    ):
+        if not os.path.isfile(path):
+            parser.error(f"{label} not found: {path}")
+
+    os.makedirs(os.path.dirname(os.path.abspath(joint_model_path)), exist_ok=True)
+    os.makedirs(os.path.dirname(os.path.abspath(tmp_model_path)), exist_ok=True)
+
+    effective_joint_epochs = args.joint_epochs or cfg.JOINT_VIRTUAL_EPOCHS
+    effective_steps_per_epoch = (
+        args.steps_per_epoch
+        or cfg.JOINT_BATCH_CONFIG.get('steps_per_epoch', 100)
+    )
+    effective_batch_size = (
+        args.batch_size
+        or joint_batch_size
+        or BATCH_SIZE
+        or cfg.JOINT_BATCH_CONFIG['batch_size']
+    )
 
     # Override weights from Bayesian optimizer (in-process call)
+    cfg.WEIGHTS = _copy.copy(cfg.WEIGHTS)
     if weights_dict is not None:
-        cfg.WEIGHTS = _copy.copy(cfg.WEIGHTS)  # Avoid polluting cached config module
         for _k, _v in weights_dict.items():
             cfg.WEIGHTS[_k] = _v
     # Override weights from JSON file (subprocess call)
     elif args.weights_json:
         import json as _json
+        if not os.path.isfile(args.weights_json):
+            parser.error(f"weights JSON not found: {args.weights_json}")
         with open(args.weights_json) as _f:
             _override_weights = _json.load(_f)
+        unknown_weights = sorted(set(_override_weights) - set(cfg.WEIGHTS))
+        if unknown_weights:
+            parser.error(
+                "weights JSON contains unknown terms: "
+                + ", ".join(unknown_weights)
+            )
         for _k, _v in _override_weights.items():
             cfg.WEIGHTS[_k] = _v
 
     experiment = None
+
+    print("Optimization inputs:")
+    print(f"  model name            : {effective_model_name}")
+    print(f"  pretrained checkpoint : {pretrain_model_path}")
+    print(f"  support STL           : {stl_path}")
+    print(f"  geometry backend      : {args.geometry_backend}")
+    print(
+        "  geometry artifact     : "
+        f"{args.geometry_artifact_path or '[backend default]'}"
+    )
+    print("Optimization outputs:")
+    print(f"  temporary checkpoint  : {tmp_model_path}")
+    print(f"  final checkpoint      : {joint_model_path}")
+    print("Fixed optimization weights:")
+    for _name, _value in cfg.WEIGHTS.items():
+        print(f"  {_name}: {_value}")
 
     # --- Fix random seed for reproducibility ---
     if weights_dict is not None:
@@ -108,7 +257,6 @@ def main(weights_dict=None, quiet=False, model_name=None, shared_H_gpu=None,
         # torch.backends.cudnn.deterministic = True
         # torch.backends.cudnn.benchmark = False
     
-    stl_path = f'stlFiles/{effective_model_name}.stl'
     # aabb_min, aabb_max = get_sdf_aabb(stl_path)
     # spaceBox = np.array([aabb_min, aabb_max])
     _, p_min, spaceBox = get_normalization_parameters(stl_path)
@@ -156,7 +304,20 @@ def main(weights_dict=None, quiet=False, model_name=None, shared_H_gpu=None,
     # model.load_state_dict(torch.load(tmpPath, map_location=cfg.DEVICE), strict=False)
     # LR = 1e-5
 
-    model.load_state_dict(torch.load(pretrain_model_path, map_location=cfg.DEVICE), strict=False)
+    load_result = model.load_state_dict(
+        torch.load(
+            pretrain_model_path,
+            map_location=cfg.DEVICE,
+            weights_only=True,
+        ),
+        strict=False,
+    )
+    if load_result.missing_keys or load_result.unexpected_keys:
+        raise RuntimeError(
+            "Pretrained checkpoint does not match the current model: "
+            f"missing={load_result.missing_keys}, "
+            f"unexpected={load_result.unexpected_keys}"
+        )
     # model.load_state_dict(torch.load(args.tmp_model_path, map_location=cfg.DEVICE))
     # model.load_state_dict(torch.load(joint_model_path, map_location=cfg.DEVICE))
     LR = cfg.JOINT_TRAIN_LR
@@ -183,8 +344,6 @@ def main(weights_dict=None, quiet=False, model_name=None, shared_H_gpu=None,
             voxel_resolution=HRes,
         )
         print("[main] H_gpu ready.")
-
-    effective_batch_size = joint_batch_size or cfg.JOINT_BATCH_CONFIG['batch_size']
 
     data_generator = StreamedGPUTrainingDataGenerator(
         aabb_min=spaceBox[0],
@@ -256,17 +415,17 @@ def main(weights_dict=None, quiet=False, model_name=None, shared_H_gpu=None,
     
     # 计算每个epoch的steps数量
     # 可以根据数据量和batch size来设置，这里设置为一个合理的默认值
-    steps_per_epoch = cfg.JOINT_BATCH_CONFIG.get('steps_per_epoch', 100)  # 默认每epoch 100 steps
-    total_steps = cfg.JOINT_VIRTUAL_EPOCHS * steps_per_epoch
+    steps_per_epoch = effective_steps_per_epoch
+    total_steps = effective_joint_epochs * steps_per_epoch
     
     print(f"Training configuration:")
     print(f"- Steps per epoch: {steps_per_epoch}")
-    print(f"- Total epochs: {cfg.JOINT_VIRTUAL_EPOCHS}")
+    print(f"- Total epochs: {effective_joint_epochs}")
     print(f"- Total training steps: {total_steps}")
     print(f"- Accumulation steps: {accumulation_steps}")
 
     
-    pbar = tqdm(range(cfg.JOINT_VIRTUAL_EPOCHS), desc="Joint training", disable=quiet)
+    pbar = tqdm(range(effective_joint_epochs), desc="Joint training", disable=quiet)
     global_step = 0
     
     for epoch in pbar:
@@ -437,12 +596,12 @@ def main(weights_dict=None, quiet=False, model_name=None, shared_H_gpu=None,
         if epoch%10==0:
             best_state = early_stopping.get_best_state()
             if best_state is not None:
-                torch.save(best_state, args.tmp_model_path)
-                print(f"\nBest model saved to '{args.tmp_model_path}'")
+                torch.save(best_state, tmp_model_path)
+                print(f"\nBest model saved to '{tmp_model_path}'")
             else:
-                torch.save(model.state_dict(), args.tmp_model_path)
-                print(f"\nBest model not found, saved the last model to '{args.tmp_model_path}'")
-    if epoch < cfg.JOINT_VIRTUAL_EPOCHS - 1:
+                torch.save(model.state_dict(), tmp_model_path)
+                print(f"\nBest model not found, saved the last model to '{tmp_model_path}'")
+    if epoch < effective_joint_epochs - 1:
         print(f"Joint training stopped early at epoch {epoch}")
     else:
         print("Joint training completed (reached max epochs)")
