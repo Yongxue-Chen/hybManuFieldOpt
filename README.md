@@ -551,6 +551,53 @@ operation_volume = 1.5
 SM_Collision_Free = self_support * 0.1
 ```
 
+Therefore, `BAYESIAN_WEIGHT_SEARCH_SPACE` should contain only the three free
+weights. The recommended format is a stepped discrete range:
+
+```python
+BAYESIAN_WEIGHT_SEARCH_SPACE = {
+    'self_support': {
+        'type': 'discrete_range',
+        'low': 1.0,
+        'high': 100.0,
+        'step': 1.0,
+    },
+    'AM_Collision_Free': {
+        'type': 'discrete_range',
+        'low': 1.0,
+        'high': 100.0,
+        'step': 1.0,
+    },
+    'structure': {
+        'type': 'discrete_range',
+        'low': 0.1,
+        'high': 10.0,
+        'step': 0.1,
+    },
+}
+```
+
+For each discrete range, `step` must be positive and `(high - low)` must be
+divisible by `step`. The corresponding default values in `WEIGHTS` must lie
+exactly on these grids because they are enqueued as the first Optuna trial.
+
+Two other search-space formats are supported when continuous or explicitly
+listed values are more appropriate:
+
+```python
+# Continuous range: (low, high, use_log_scale)
+'self_support': (1.0, 100.0, False)
+'structure': (0.01, 10.0, True)
+
+# Explicit discrete candidates
+'AM_Collision_Free': [10.0, 25.0, 50.0, 100.0]
+```
+
+`False` selects uniform continuous sampling and `True` selects logarithmic
+continuous sampling. Do not include `final_state`, `operation_volume`, or
+`SM_Collision_Free` in the search space: they are fixed or derived by the
+constrained optimizer as shown above.
+
 Each trial calls `main_optimize.py` with a sampled weight set. By default, the bracket workflow reads:
 
 ```text
