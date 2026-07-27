@@ -2,7 +2,7 @@
 ![Teaser](./assets/teaser.png)
 
 Yongxue Chen, Tao Liu, Aoran Lyu, Yu Jiang, Neelotpal Dutta, and Charlie C.L. Wang, "[Field Optimization for Scalable and Distortion-Aware Process Planning in Hybrid Additive-Subtractive Manufacturing](TODO)", TODO venue / preprint, TODO year.  
-[[Project](TODO)] [[Paper](TODO)] [[Video](TODO)]
+[[Project](https://yongxue-chen.github.io/hybManuFieldOpt/)] [[Paper](TODO)] [[Video](TODO)]
 
 ## Abstract
 This paper presents a field-based optimization method for process planning in hybrid manufacturing, where the goal is to determine a feasible and efficient sequence of additive and subtractive operations for fabricating a target shape. Existing approaches rely on deterministic or discretized formulations, which lead to unoptimized fabrication time and make planning sensitive to voxel resolution. They also do not explicitly account for distortion in intermediate structures formed during manufacturing. To address these limitations, we represent manufacturing states using continuous fields, which scale naturally to models with large dimensions and fine geometric features while enabling smoother fabrication sequences. Based on this representation, we formulate process planning as a numerical optimization problem under multiple objectives, including final shape completeness, intermediate structural strength, manufacturing time, self-supporting and collision-free. Experimental results show that our method can generate distortion-aware process plans on a variety of models while substantially reducing fabrication time through up to a 72.6\% reduction in the volume of extra support.
