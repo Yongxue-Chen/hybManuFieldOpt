@@ -6,7 +6,7 @@
 
 - `index.html`：页面内容、章节顺序、链接和图片位置。
 - `styles.css`：页面布局、颜色、字体和响应式样式。
-- `script.js`：移动端菜单、复制 BibTeX 和页脚年份。
+- `script.js`：移动端菜单、复制 BibTeX、图片自动加载和页脚年份。
 - `web-assets/`：建议统一保存网页图片、视频封面、PDF 等静态资源。
 
 ## 本地预览
@@ -23,50 +23,40 @@ python -m http.server 8000
 
 ## 修改文字和链接
 
-打开 `index.html`，搜索 `TODO:` 即可找到需要替换的位置，主要包括：
+当前论文摘要、方法说明、实验结论、作者、单位、期刊和代码链接已经填写。后续主要需要更新：
 
-1. 论文会议和年份；
-2. 项目标题、作者、单位和作者主页；
-3. Paper、Code、Video 链接；
-4. 项目简介、方法说明和贡献；
-5. 实验结果说明；
-6. BibTeX。
+1. Paper 的正式 URL；
+2. Video 的嵌入链接；
+3. DOI、卷号、期号和文章号；
+4. 最终 BibTeX。
 
 页面导航通过章节的 `id` 定位，例如 `href="#method"` 对应 `id="method"`。修改章节名时，注意保持二者一致。
 
 ## 添加和替换图片
 
-把图片放入 `web-assets/`，推荐使用只含小写字母、数字和连字符的文件名，例如：
+把图片放入 `web-assets/`。页面会自动检测并加载以下文件；文件不存在时保留带命名提示的占位块：
 
 ```text
 web-assets/
-├── teaser.webp
-├── pipeline.webp
-├── result-comparison.webp
-└── physical-validation.webp
+├── fig-01-overview.webp
+├── fig-03-pipeline.webp
+├── fig-04-femur.webp
+├── fig-10-distortion-ablation.webp
+├── fig-15-scalability.webp
+└── fig-17-physical-models.webp
 ```
 
-优先使用 WebP 或经过压缩的 JPEG/PNG。GitHub Pages 仓库不适合存放体积很大的原始视频或无压缩图片。
+建议从论文原始图文件导出，而不是对 PDF 截屏。优先使用 WebP，使用 sRGB 色彩空间，宽度建议为 1800–2400 px，单张尽量控制在 1 MB 内。Fig. 10 是实验区主图，建议宽度 2200–2600 px；其余图片宽度 1600–2200 px 即可。
 
-将对应的占位块：
+如果需要加入单位 logo，使用透明背景的 SVG 或 PNG，并命名为：
 
-```html
-<div class="media-placeholder media-placeholder-wide">
-  <span>Teaser image / overview video</span>
-</div>
+```text
+web-assets/
+├── logo-digital-manufacturing-lab.svg
+└── logo-university-of-manchester.svg
 ```
 
-替换为：
-
-```html
-<img
-  class="project-media"
-  src="web-assets/teaser.webp"
-  alt="A concise description of the teaser figure"
-/>
-```
-
-请填写有意义的 `alt` 文本。结果区的图片也可以用同样方式替换每个 `.media-placeholder`。
+当前设计使用文字单位署名，不依赖 logo；收到正式 logo 文件后再加入页面即可。
 
 ## 添加视频
 
@@ -76,7 +66,7 @@ web-assets/
 <iframe
   class="video-frame"
   src="https://www.youtube.com/embed/VIDEO_ID"
-  title="FieldOpt-HM project video"
+  title="Field optimization for hybrid manufacturing project video"
   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
   allowfullscreen
 ></iframe>
@@ -116,7 +106,7 @@ git push -u origin web
 首次部署通常需要几分钟。GitHub 会在 Pages 设置页显示最终网址，项目仓库的默认地址通常为：
 
 ```text
-https://yongxue-chen.github.io/fieldOpt_HM/
+https://yongxue-chen.github.io/hybManuFieldOpt/
 ```
 
 以后只需继续向 `web` 分支提交并推送，GitHub Pages 会自动更新网站。部署状态可以在仓库的 **Actions** 页面查看。

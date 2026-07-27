@@ -32,5 +32,18 @@ document.querySelectorAll("[data-copy-target]").forEach((button) => {
   });
 });
 
+document.querySelectorAll("[data-image]").forEach((slot) => {
+  const image = new Image();
+  image.alt = slot.dataset.alt || "";
+  image.loading = "eager";
+  image.decoding = "async";
+  image.addEventListener("load", () => {
+    slot.classList.add("has-image");
+    slot.replaceChildren(image);
+  });
+  const separator = slot.dataset.image.includes("?") ? "&" : "?";
+  image.src = `${slot.dataset.image}${separator}v=16`;
+});
+
 const year = document.getElementById("current-year");
 if (year) year.textContent = new Date().getFullYear();

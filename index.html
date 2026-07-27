@@ -8,22 +8,18 @@
       content="Project page for Field Optimization for Scalable and Distortion-Aware Process Planning in Hybrid Additive-Subtractive Manufacturing."
     />
     <meta name="theme-color" content="#f4f1ea" />
-    <title>FieldOpt-HM | Project Page</title>
+    <title>Field Optimization for Hybrid Manufacturing | Project Page</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap"
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="styles.css" />
-    <script src="script.js" defer></script>
+    <link rel="stylesheet" href="styles.css?v=20" />
+    <script src="script.js?v=16" defer></script>
   </head>
   <body>
     <header class="site-header">
-      <a class="brand" href="#top" aria-label="FieldOpt-HM home">
-        <span class="brand-mark" aria-hidden="true"></span>
-        <span>FieldOpt-HM</span>
-      </a>
       <button
         class="nav-toggle"
         type="button"
@@ -34,7 +30,8 @@
         <span></span><span></span>
       </button>
       <nav id="site-navigation" class="site-nav" aria-label="Main navigation">
-        <a href="#overview">Overview</a>
+        <a href="#abstract">Abstract</a>
+        <a href="#video">Video</a>
         <a href="#method">Method</a>
         <a href="#results">Results</a>
         <a href="#citation">Citation</a>
@@ -46,161 +43,261 @@
         <div class="hero-glow hero-glow-one" aria-hidden="true"></div>
         <div class="hero-glow hero-glow-two" aria-hidden="true"></div>
         <div class="hero-content">
-          <!-- TODO: Replace with the venue and year. -->
-          <p class="eyebrow">Project page · Venue / Year</p>
+          <p class="eyebrow">
+            <strong>ACM Transactions on Graphics</strong>
+            <span>· SIGGRAPH Asia 2026</span>
+          </p>
           <h1>
             Field Optimization for Scalable and Distortion-Aware Process
             Planning in Hybrid Additive-Subtractive Manufacturing
           </h1>
 
-          <!-- TODO: Update names, links, affiliations, and author notes. -->
           <p class="authors">
             Yongxue Chen · Tao Liu · Aoran Lyu · Yu Jiang · Neelotpal Dutta ·
             Charlie C.L. Wang
           </p>
-          <p class="affiliations">The University of Manchester</p>
+          <p class="affiliations">
+            Digital Manufacturing Laboratory · The University of Manchester
+          </p>
 
           <div class="action-row" aria-label="Project resources">
-            <!-- TODO: Replace # with the final URLs. -->
-            <a class="button button-primary" href="#">Paper</a>
+            <a class="button button-primary" href="#" aria-label="Paper link coming soon">
+              Paper
+            </a>
             <a
               class="button button-secondary"
-              href="https://github.com/Yongxue-Chen/fieldOpt_HM"
-              >Code</a
+              href="https://github.com/Yongxue-Chen/hybManuFieldOpt"
             >
-            <a class="button button-secondary" href="#">Video</a>
+              Code
+            </a>
+            <a class="button button-secondary" href="#video">Video</a>
           </div>
         </div>
       </section>
 
-      <section class="section section-feature" aria-labelledby="teaser-title">
-        <div class="section-heading">
-          <p class="kicker">At a glance</p>
-          <h2 id="teaser-title">Project teaser</h2>
-        </div>
-        <!-- TODO: Replace this block with an image or video. See WEB_GUIDE.md. -->
-        <div class="media-placeholder media-placeholder-wide">
-          <span>Teaser image / overview video</span>
-          <small>Recommended ratio: 16:7</small>
-        </div>
-        <p class="caption">
-          Add a concise caption that explains the central idea shown above.
-        </p>
+      <section id="teaser" class="section section-feature" aria-label="Project overview figure">
+        <figure class="figure-card figure-card-wide">
+          <div
+            class="media-placeholder media-placeholder-wide"
+            data-image="web-assets/fig-01-overview.webp"
+            data-alt="Comparison of voxel-based and field-based hybrid manufacturing process planning."
+          >
+            <span>Overview figure</span>
+            <small>web-assets/fig-01-overview.webp · recommended 16:7</small>
+          </div>
+          <figcaption class="caption">
+            By formulating hybrid manufacturing (HM) process planning as an
+            optimization problem over continuous fields, our method reduces the
+            estimated fabrication time by 68.3% on the GE-Bracket model and
+            controls distortion in intermediate structures, as indicated by the
+            displacements and the histograms obtained from finite element
+            analysis. Owing to the continuous field representation, our method
+            gives much smaller geometric approximation errors (see the color map
+            in the left) and preserves small geometric features (see the
+            zoom-views) while maintaining a computation time comparable to that
+            of the voxel-based method
+            [<a
+              href="https://dl.acm.org/doi/10.1145/3763355"
+              target="_blank"
+              rel="noreferrer"
+              >Chen et al. 2025</a
+            >] in low-resolution. The frequency spectra of local tool-motion velocities further
+            demonstrate the improved continuity of the operations generated by
+            our approach. Moreover, the proposed formulation naturally extends
+            to advanced HM platforms with 3-axis additive and 5-axis
+            subtractive-manufacturing capabilities.
+          </figcaption>
+        </figure>
       </section>
 
-      <section id="overview" class="section split-section">
-        <div class="section-heading sticky-heading">
-          <p class="kicker">Overview</p>
-          <h2>What problem does the project solve?</h2>
-        </div>
-        <div class="prose">
-          <!-- TODO: Replace with the final abstract or project summary. -->
-          <p class="lead">
-            Use this section for a short, accessible summary of the problem,
-            the main insight, and the contribution.
-          </p>
+      <section id="abstract" class="section centered-section">
+        <h2 class="plain-section-title">Abstract</h2>
+        <div class="prose prose-centered">
           <p>
-            Keep the first paragraph understandable to a broad graphics and
-            manufacturing audience. A second paragraph can introduce the
-            technical formulation, constraints, and the most important result.
+            This paper presents a field-based optimization method for process
+            planning in hybrid manufacturing, where the goal is to determine a
+            feasible and efficient sequence of additive and subtractive
+            operations for fabricating a target shape. Existing approaches rely
+            on deterministic or discretized formulations, which lead to
+            unoptimized fabrication time and make planning sensitive to voxel
+            resolution. They also do not explicitly account for distortion in
+            intermediate structures formed during manufacturing. To address
+            these limitations, we represent manufacturing states using
+            continuous fields, which scale naturally to models with large
+            dimensions and fine geometric features while enabling smoother
+            fabrication sequences. Based on this representation, we formulate
+            process planning as a numerical optimization problem under multiple
+            objectives, including final shape conformance, intermediate
+            structural strength, manufacturing time, self-supporting and
+            collision-free. Experimental results show that our method can
+            generate distortion-aware process plans on a variety of models while
+            substantially reducing fabrication time through up to a 72.6%
+            reduction in the volume of extra support.
           </p>
-          <ul class="contribution-list">
-            <li><span>01</span>State the first key contribution.</li>
-            <li><span>02</span>State the second key contribution.</li>
-            <li><span>03</span>State the main experimental finding.</li>
-          </ul>
         </div>
       </section>
 
-      <section id="method" class="section">
-        <div class="section-heading">
-          <p class="kicker">Method</p>
-          <h2>Continuous field optimization pipeline</h2>
-          <p>
-            Introduce the method figure first, then explain its stages in a few
-            focused steps.
-          </p>
+      <section id="video" class="section centered-section">
+        <h2 class="plain-section-title">Video</h2>
+        <div class="media-placeholder media-placeholder-video">
+          <span>Video coming soon</span>
+          <small>YouTube or Vimeo embed · 16:9</small>
         </div>
-        <!-- TODO: Replace with the final pipeline figure. -->
-        <div class="media-placeholder media-placeholder-method">
-          <span>Method / pipeline figure</span>
-          <small>Recommended ratio: 2:1</small>
-        </div>
-        <div class="step-grid">
-          <article>
-            <span class="step-number">01</span>
-            <h3>Input & representation</h3>
-            <p>Describe the target geometry and its implicit representation.</p>
-          </article>
-          <article>
-            <span class="step-number">02</span>
-            <h3>Field optimization</h3>
-            <p>Describe the learnable fields, objectives, and constraints.</p>
-          </article>
-          <article>
-            <span class="step-number">03</span>
-            <h3>Manufacturing plan</h3>
-            <p>Describe how optimized fields become layers and tool paths.</p>
-          </article>
-        </div>
+      </section>
+
+      <section id="method" class="section centered-section">
+        <h2 class="plain-section-title">Method</h2>
+        <figure class="figure-card figure-card-wide">
+          <div
+            class="media-placeholder media-placeholder-method"
+            data-image="web-assets/fig-03-pipeline.webp"
+            data-alt="Computational pipeline of the field-optimization-based hybrid manufacturing process planning method."
+          >
+            <span>Computational pipeline</span>
+            <small>web-assets/fig-03-pipeline.webp · recommended 2:1</small>
+          </div>
+          <figcaption class="caption">
+            Illustration of the computational pipeline of our
+            field-optimization-based HM process planning approach. The sequence
+            of AM/SM operations for an input model <em>M</em> is determined by
+            five implicit fields:
+            (<em>t</em><sub>AM</sub>(x), <em>t</em><sub>SM</sub>(x),
+            <em>p</em><sub>AM</sub>(x), <em>p</em><sub>SM</sub>(x),
+            <em>N</em><sub>CC</sub>(x)). The optimization of these fields is
+            driven by minimizing loss terms associated with shape-conformance
+            <em>L</em><sub>shp</sub>, support volume
+            <em>L</em><sub>vol</sub>, structural distortion
+            <em>L</em><sub>str</sub>, self-supporting constraints
+            <em>L</em><sub>spt</sub>, and AM/SM collision avoidance, denoted by
+            <em>L</em><sub>cAM</sub> and <em>L</em><sub>cSM</sub>,
+            respectively. After the implicit fields are determined, the AM
+            layers and SM sequences are extracted and sorted in the
+            post-processing step, followed by toolpath generation.
+          </figcaption>
+        </figure>
       </section>
 
       <section id="results" class="section section-results">
-        <div class="section-heading">
-          <p class="kicker">Results</p>
-          <h2>Selected experiments</h2>
-          <p>
-            Replace these cards with representative qualitative and
-            quantitative results.
-          </p>
-        </div>
+        <h2 class="plain-section-title">Experiments</h2>
         <div class="result-grid">
-          <figure class="result-card result-card-large">
-            <div class="media-placeholder"><span>Primary result</span></div>
+          <figure class="result-card">
+            <div
+              class="media-placeholder"
+              data-image="web-assets/fig-04-femur.webp"
+              data-alt="Hybrid fabrication of a high-genus femur model."
+            >
+              <span>Fig. 4 · Complex geometry</span>
+              <small>web-assets/fig-04-femur.webp</small>
+            </div>
             <figcaption>
-              Explain the model, comparison, and the conclusion readers should
-              draw.
+              <strong>
+                Fabrication of a Femur model with complex geometry (genus 98).
+              </strong>
+              <strong>(a) SM-only:</strong> using only SM operations cannot
+              form the internal porous structures.
+              <strong>(b) AM-only:</strong> when using only AM operations, the
+              internal support structures cannot be removed after fabrication.
+              The results in (a) and (b) are both generated by Autodesk Fusion.
+              <strong>(c) HM:</strong> the exact target model can be fabricated
+              through the interlaced AM and SM operations generated by our
+              approach, with the corresponding AM layers and SM sequences shown
+              on the right.
             </figcaption>
           </figure>
-          <figure class="result-card">
-            <div class="media-placeholder"><span>Ablation / comparison</span></div>
-            <figcaption>Add a short result caption.</figcaption>
-          </figure>
-          <figure class="result-card">
-            <div class="media-placeholder"><span>Physical validation</span></div>
-            <figcaption>Add a short result caption.</figcaption>
-          </figure>
-        </div>
-      </section>
 
-      <section class="section video-section">
-        <div>
-          <p class="kicker">Presentation</p>
-          <h2>Watch the project video</h2>
-          <p>
-            Embed a YouTube or Vimeo video here, or link to a downloadable MP4.
-          </p>
-        </div>
-        <!-- TODO: Replace with an iframe. See WEB_GUIDE.md. -->
-        <div class="media-placeholder media-placeholder-video">
-          <span>Video embed</span>
-          <small>Recommended ratio: 16:9</small>
+          <figure class="result-card">
+            <div
+              class="media-placeholder"
+              data-image="web-assets/fig-10-distortion-ablation.webp"
+              data-alt="Ablation study of structural distortion loss on the Fertility model."
+            >
+              <span>Fig. 10 · Distortion ablation</span>
+              <small>web-assets/fig-10-distortion-ablation.webp</small>
+            </div>
+            <figcaption>
+              <strong>
+                Ablation study of the structural distortion loss
+                <span class="math-symbol"><em>L</em><sub>str</sub></span> on
+                the Fertility model.
+              </strong>
+              The loss
+              <span class="math-symbol"><em>L</em><sub>str</sub></span>
+              penalizes excessive deformation in intermediate structures during
+              fabrication. Panel (a) shows the result optimized with
+              <span class="math-symbol"><em>L</em><sub>str</sub></span>, where
+              distortion at the evaluated fabrication height is controlled.
+              Panel (b) shows the result optimized without
+              <span class="math-symbol"><em>L</em><sub>str</sub></span>; a
+              floating component is formed, as highlighted in the zoomed view.
+              Panel (c) compares the maximum-displacement histograms over all
+              intermediate structures and shows substantially larger distortion
+              when the loss is disabled.
+            </figcaption>
+          </figure>
+
+          <figure id="fig-15-card" class="result-card">
+            <div
+              class="media-placeholder"
+              data-image="web-assets/fig-15-scalability.webp"
+              data-alt="Scalability comparison between voxel-based and field-based methods."
+            >
+              <span>Fig. 15 · Scalability</span>
+              <small>web-assets/fig-15-scalability.webp</small>
+            </div>
+            <figcaption>
+              <strong>
+                Scalability study on the GE-Bracket model at different
+                dimensions.
+              </strong>
+              Comparison of <strong>(a) the voxel-based method</strong>
+              [<a
+                href="https://dl.acm.org/doi/10.1145/3763355"
+                target="_blank"
+                rel="noreferrer"
+                >Chen et al. 2025</a
+              >] and
+              <strong>(b) our field-based method</strong>. The four plots report
+              support-volume ratio (top left), maximum and mean geometric error
+              (top right), operation jumps (bottom left), and total AM+SM
+              manufacturing time (bottom right). As model size increases, the
+              field-based method produces fewer jumps and requires less
+              manufacturing time.
+            </figcaption>
+          </figure>
+
+          <figure id="fig-17-card" class="result-card">
+            <div
+              class="media-placeholder"
+              data-image="web-assets/fig-17-physical-models.webp"
+              data-alt="Four physical models fabricated on a desktop hybrid manufacturing machine."
+            >
+              <span>Fig. 17 · Physical validation</span>
+              <small>web-assets/fig-17-physical-models.webp</small>
+            </div>
+            <figcaption>
+              <strong>
+                Physical models fabricated using a desktop hybrid manufacturing
+                machine, with fabrication times shown in parentheses.
+              </strong>
+              <strong>(a) GE-Bracket</strong> (16 hours),
+              <strong>(b) MBB Beam</strong> (5 hours),
+              <strong>(c) Femur</strong> (23 hours), and
+              <strong>(d) Cantilever Bracket</strong> (6 hours).
+            </figcaption>
+          </figure>
         </div>
       </section>
 
       <section id="citation" class="section citation-section">
-        <div class="section-heading">
-          <p class="kicker">Citation</p>
-          <h2>Cite this work</h2>
-        </div>
+        <h2 class="plain-section-title">Citation</h2>
         <div class="citation-card">
-          <!-- TODO: Replace this placeholder BibTeX after publication. -->
-          <pre><code id="bibtex">@article{chen_fieldopt_todo,
+          <pre><code id="bibtex">@article{chen2026fieldoptimization,
   title   = {Field Optimization for Scalable and Distortion-Aware
              Process Planning in Hybrid Additive-Subtractive Manufacturing},
-  author  = {Chen, Yongxue and others},
-  journal = {TODO},
-  year    = {TODO}
+  author  = {Chen, Yongxue and Liu, Tao and Lyu, Aoran and Jiang, Yu
+             and Dutta, Neelotpal and Wang, Charlie C. L.},
+  journal = {ACM Transactions on Graphics},
+  year    = {2026}
 }</code></pre>
           <button class="copy-button" type="button" data-copy-target="bibtex">
             Copy BibTeX
@@ -208,11 +305,11 @@
         </div>
       </section>
 
-      <section class="section contact-section">
-        <div>
-          <p class="kicker">Contact</p>
-          <h2>Questions about the project?</h2>
-        </div>
+      <section class="section contact-section centered-section">
+        <h2 class="plain-section-title">Contact</h2>
+        <p class="institution-note">
+          Digital Manufacturing Laboratory · The University of Manchester
+        </p>
         <div class="contact-links">
           <a href="mailto:yongxue.chen@manchester.ac.uk">
             Yongxue Chen
@@ -227,7 +324,7 @@
     </main>
 
     <footer>
-      <p>FieldOpt-HM · <span id="current-year"></span></p>
+      <p>Field-based planning for hybrid manufacturing · <span id="current-year"></span></p>
       <a href="#top">Back to top ↑</a>
     </footer>
   </body>
