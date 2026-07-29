@@ -30,7 +30,15 @@ python -m pip install torch --index-url https://download.pytorch.org/whl/cu130
 
 # 3. Install the matching CUDA compiler/development toolkit
 conda install -c nvidia cuda-nvcc=13.0 cuda-toolkit=13.0 -y
+```
 
+`cuda-toolkit` pulls in `gxx_linux-64`/`gcc_linux-64` as a dependency. On some systems, running the command above right after `conda activate <env>` in the same non-interactive shell makes conda's internal reactivation step misresolve `CONDA_PREFIX` to the base environment while running that package's activation script. This produces an error such as `ERROR: This cross-compiler package contains no program .../bin/x86_64-conda-linux-gnu-g++`, and can also corrupt the environment's `conda-meta/history` file (`conda env list` then reports `DirectoryNotACondaEnvironmentError`). If you hit this, install without first activating the environment:
+
+```bash
+conda install -n fieldopt_hm_rtx5090 -c nvidia cuda-nvcc=13.0 cuda-toolkit=13.0 -y
+```
+
+```bash
 # 4. Configure the Conda CUDA 13 layout
 export CUDA_HOME=$CONDA_PREFIX
 export PATH=$CUDA_HOME/bin:$PATH
@@ -54,6 +62,18 @@ export WITH_NINJA=1
 export MAX_JOBS=8
 python -m pip install . --no-build-isolation
 cd ../../../
+```
+
+If `gxx_linux-64`/`gcc_linux-64` were installed in step 3, activating the environment overrides `CC`/`CXX` to point at the conda cross-compiler toolchain. Building `tiny-cuda-nn` with that toolchain can fail at the final link step with `ld: ... .preinit_array section is not allowed in DSO` (an incompatibility between the environment's newer binutils `ld` and its bundled older static `libpthread.a`). If you hit this, force the system compiler before building:
+
+```bash
+export CC=/usr/bin/gcc
+export CXX=/usr/bin/g++
+```
+
+then re-run the `pip install . --no-build-isolation` command above.
+
+```bash
 
 # 7. Install this repository's Python dependencies
 python -m pip install -r requirements.txt
