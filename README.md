@@ -1,7 +1,7 @@
 # Field Optimization for Scalable and Distortion-Aware Process Planning in Hybrid Additive-Subtractive Manufacturing
 ![Teaser](./assets/teaser.png)
 
-[Yongxue Chen](https://yongxue-chen.github.io/), Tao Liu, Aoran Lyu, Yu Jiang, Neelotpal Dutta, and Charlie C.L. Wang, "[Field Optimization for Scalable and Distortion-Aware Process Planning in Hybrid Additive-Subtractive Manufacturing](TODO)", TODO venue / preprint, TODO year.<br>
+[Yongxue Chen](https://yongxue-chen.github.io/), Tao Liu, Aoran Lyu, Yu Jiang, Neelotpal Dutta, and [Charlie C.L. Wang](https://mewangcl.github.io/), "[Field Optimization for Scalable and Distortion-Aware Process Planning in Hybrid Additive-Subtractive Manufacturing](TODO)", ACM Transactions on Graphics (SIGGRAPH Asia 2026).<br>
 [[Project](https://yongxue-chen.github.io/hybManuFieldOpt/)] [[Paper](TODO)] [[Video](TODO)]
 
 ## Abstract
