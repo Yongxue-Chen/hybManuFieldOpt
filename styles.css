@@ -161,6 +161,12 @@ a {
   color: var(--muted);
 }
 
+.corresponding-note {
+  margin: 6px 0 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
 .action-row {
   display: flex;
   flex-wrap: wrap;
