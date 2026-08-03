@@ -1,11 +1,11 @@
 # Field Optimization for Scalable and Distortion-Aware Process Planning in Hybrid Additive-Subtractive Manufacturing
 ![Teaser](./assets/teaser.png)
 
-[Yongxue Chen](https://yongxue-chen.github.io/), Tao Liu, Aoran Lyu, Yu Jiang, Neelotpal Dutta, and [Charlie C.L. Wang](https://mewangcl.github.io/)<sup>&dagger;</sup>, "[Field Optimization for Scalable and Distortion-Aware Process Planning in Hybrid Additive-Subtractive Manufacturing](https://yongxue-chen.github.io/hybManuFieldOpt/hybManuFieldOpt_preprint.pdf)", ACM Transactions on Graphics (SIGGRAPH Asia 2026), Conditionally accepted. [[Project](https://yongxue-chen.github.io/hybManuFieldOpt/)] [[Paper](https://yongxue-chen.github.io/hybManuFieldOpt/hybManuFieldOpt_preprint.pdf)] [[Video](TODO)]<br>
-<sup>&dagger;</sup>Corresponding author.
+[Yongxue Chen](https://yongxue-chen.github.io/), Tao Liu, Aoran Lyu, Yu Jiang, Neelotpal Dutta, and Charlie C.L. Wang, "[Field Optimization for Scalable and Distortion-Aware Process Planning in Hybrid Additive-Subtractive Manufacturing](TODO)", TODO venue / preprint, TODO year.<br>
+[[Project](TODO)] [[Paper](TODO)] [[Video](https://youtu.be/HE7gqaH4Iv0)]
 
 ## Abstract
-This paper presents a field-based optimization method for process planning in hybrid manufacturing, where the goal is to determine a feasible and efficient sequence of additive and subtractive operations for fabricating a target shape. Existing approaches rely on deterministic or discretized formulations, which lead to unoptimized fabrication time and make planning sensitive to voxel resolution. They also do not explicitly account for distortion in intermediate structures formed during manufacturing. To address these limitations, we represent manufacturing states using continuous fields, which scale naturally to models with large dimensions and fine geometric features while enabling smoother fabrication sequences. Based on this representation, we formulate process planning as a numerical optimization problem under multiple objectives, including final shape conformance, intermediate structural strength, manufacturing time, self-supporting and collision-free. Experimental results show that our method can generate distortion-aware process plans on a variety of models while substantially reducing fabrication time through up to a 72.6\% reduction in the volume of extra support.
+This paper presents a field-based optimization method for process planning in hybrid manufacturing, where the goal is to determine a feasible and efficient sequence of additive and subtractive operations for fabricating a target shape. Existing approaches rely on deterministic or discretized formulations, which lead to unoptimized fabrication time and make planning sensitive to voxel resolution. They also do not explicitly account for distortion in intermediate structures formed during manufacturing. To address these limitations, we represent manufacturing states using continuous fields, which scale naturally to models with large dimensions and fine geometric features while enabling smoother fabrication sequences. Based on this representation, we formulate process planning as a numerical optimization problem under multiple objectives, including final shape completeness, intermediate structural strength, manufacturing time, self-supporting and collision-free. Experimental results show that our method can generate distortion-aware process plans on a variety of models while substantially reducing fabrication time through up to a 72.6\% reduction in the volume of extra support.
 
 ## Repository Scope
 This repository provides a PyTorch implementation of the continuous field optimization framework. Given an input STL model, the pipeline prepares support-aware geometry, builds voxel and/or neural SDF geometry representations, imports an initial operation field produced by the companion voxel-based planner, optimizes neural manufacturing fields, and postprocesses the optimized network into layers and tool paths.
@@ -30,15 +30,7 @@ python -m pip install torch --index-url https://download.pytorch.org/whl/cu130
 
 # 3. Install the matching CUDA compiler/development toolkit
 conda install -c nvidia cuda-nvcc=13.0 cuda-toolkit=13.0 -y
-```
 
-`cuda-toolkit` pulls in `gxx_linux-64`/`gcc_linux-64` as a dependency. On some systems, running the command above right after `conda activate <env>` in the same non-interactive shell makes conda's internal reactivation step misresolve `CONDA_PREFIX` to the base environment while running that package's activation script. This produces an error such as `ERROR: This cross-compiler package contains no program .../bin/x86_64-conda-linux-gnu-g++`, and can also corrupt the environment's `conda-meta/history` file (`conda env list` then reports `DirectoryNotACondaEnvironmentError`). If you hit this, install without first activating the environment:
-
-```bash
-conda install -n fieldopt_hm_rtx5090 -c nvidia cuda-nvcc=13.0 cuda-toolkit=13.0 -y
-```
-
-```bash
 # 4. Configure the Conda CUDA 13 layout
 export CUDA_HOME=$CONDA_PREFIX
 export PATH=$CUDA_HOME/bin:$PATH
@@ -62,18 +54,6 @@ export WITH_NINJA=1
 export MAX_JOBS=8
 python -m pip install . --no-build-isolation
 cd ../../../
-```
-
-If `gxx_linux-64`/`gcc_linux-64` were installed in step 3, activating the environment overrides `CC`/`CXX` to point at the conda cross-compiler toolchain. Building `tiny-cuda-nn` with that toolchain can fail at the final link step with `ld: ... .preinit_array section is not allowed in DSO` (an incompatibility between the environment's newer binutils `ld` and its bundled older static `libpthread.a`). If you hit this, force the system compiler before building:
-
-```bash
-export CC=/usr/bin/gcc
-export CXX=/usr/bin/g++
-```
-
-then re-run the `pip install . --no-build-isolation` command above.
-
-```bash
 
 # 7. Install this repository's Python dependencies
 python -m pip install -r requirements.txt
@@ -571,53 +551,6 @@ operation_volume = 1.5
 SM_Collision_Free = self_support * 0.1
 ```
 
-Therefore, `BAYESIAN_WEIGHT_SEARCH_SPACE` should contain only the three free
-weights. The recommended format is a stepped discrete range:
-
-```python
-BAYESIAN_WEIGHT_SEARCH_SPACE = {
-    'self_support': {
-        'type': 'discrete_range',
-        'low': 1.0,
-        'high': 100.0,
-        'step': 1.0,
-    },
-    'AM_Collision_Free': {
-        'type': 'discrete_range',
-        'low': 1.0,
-        'high': 100.0,
-        'step': 1.0,
-    },
-    'structure': {
-        'type': 'discrete_range',
-        'low': 0.1,
-        'high': 10.0,
-        'step': 0.1,
-    },
-}
-```
-
-For each discrete range, `step` must be positive and `(high - low)` must be
-divisible by `step`. The corresponding default values in `WEIGHTS` must lie
-exactly on these grids because they are enqueued as the first Optuna trial.
-
-Two other search-space formats are supported when continuous or explicitly
-listed values are more appropriate:
-
-```python
-# Continuous range: (low, high, use_log_scale)
-'self_support': (1.0, 100.0, False)
-'structure': (0.01, 10.0, True)
-
-# Explicit discrete candidates
-'AM_Collision_Free': [10.0, 25.0, 50.0, 100.0]
-```
-
-`False` selects uniform continuous sampling and `True` selects logarithmic
-continuous sampling. Do not include `final_state`, `operation_volume`, or
-`SM_Collision_Free` in the search space: they are fixed or derived by the
-constrained optimizer as shown above.
-
 Each trial calls `main_optimize.py` with a sampled weight set. By default, the bracket workflow reads:
 
 ```text
@@ -811,10 +744,10 @@ If you use this code in academic work, please cite the corresponding paper.
 
 ```bibtex
 @misc{fieldopt_hm,
-  title  = {Field Optimization for Scalable and Distortion-Aware Process Planning in Hybrid Additive-Subtractive Manufacturing},
-  author = {Chen, Yongxue and Liu, Tao and Lyu, Aoran and Jiang, Yu and Dutta, Neelotpal and Wang, Charlie C.L.},
-  year   = {2026},
-  note   = {ACM Transactions on Graphics (SIGGRAPH Asia 2026), Conditionally accepted}
+  title  = {TODO: Continuous Field Optimization for Hybrid Additive-Subtractive Manufacturing},
+  author = {TODO},
+  year   = {TODO},
+  note   = {TODO}
 }
 ```
 
