@@ -1,7 +1,7 @@
 # Field Optimization for Scalable and Distortion-Aware Process Planning in Hybrid Additive-Subtractive Manufacturing
 ![Teaser](./assets/teaser.png)
 
-[Yongxue Chen](https://yongxue-chen.github.io/), Tao Liu, Aoran Lyu, Yu Jiang, Neelotpal Dutta, and [Charlie C.L. Wang](https://mewangcl.github.io/)<sup>&dagger;</sup>, "[Field Optimization for Scalable and Distortion-Aware Process Planning in Hybrid Additive-Subtractive Manufacturing](https://yongxue-chen.github.io/hybManuFieldOpt/hybManuFieldOpt_preprint.pdf)", ACM Transactions on Graphics (SIGGRAPH Asia 2026), Conditionally accepted. [[Project](https://yongxue-chen.github.io/hybManuFieldOpt/)] [[Paper](https://yongxue-chen.github.io/hybManuFieldOpt/hybManuFieldOpt_preprint.pdf)] [[Video](https://youtu.be/HE7gqaH4Iv0)]<br>
+[Yongxue Chen](https://yongxue-chen.github.io/), Tao Liu, Aoran Lyu, Yu Jiang, Neelotpal Dutta, and [Charlie C.L. Wang](https://mewangcl.github.io/)<sup>&dagger;</sup>, "[Field Optimization for Scalable and Distortion-Aware Process Planning in Hybrid Additive-Subtractive Manufacturing](https://yongxue-chen.github.io/hybManuFieldOpt/hybManuFieldOpt_preprint.pdf)", ACM Transactions on Graphics (SIGGRAPH Asia 2026), Conditionally accepted. [[Project](https://yongxue-chen.github.io/hybManuFieldOpt/)] [[Paper](https://github.com/Yongxue-Chen/hybManuFieldOpt/releases/download/v0-preprint/hybManuFieldOpt_preprint.pdf)] [[Video](https://youtu.be/HE7gqaH4Iv0)]<br>
 <sup>&dagger;</sup>Corresponding author.
 
 ## Abstract
