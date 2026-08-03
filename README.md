@@ -2,7 +2,7 @@
 ![Teaser](./assets/teaser.png)
 
 [Yongxue Chen](https://yongxue-chen.github.io/), Tao Liu, Aoran Lyu, Yu Jiang, Neelotpal Dutta, and Charlie C.L. Wang, "[Field Optimization for Scalable and Distortion-Aware Process Planning in Hybrid Additive-Subtractive Manufacturing](TODO)", TODO venue / preprint, TODO year.<br>
-[[Project](TODO)] [[Paper](TODO)] [[Video](https://youtu.be/HE7gqaH4Iv0)]
+[[Project](https://yongxue-chen.github.io/hybManuFieldOpt/)] [[Paper](TODO)] [[Video](https://youtu.be/HE7gqaH4Iv0)]
 
 ## Abstract
 This paper presents a field-based optimization method for process planning in hybrid manufacturing, where the goal is to determine a feasible and efficient sequence of additive and subtractive operations for fabricating a target shape. Existing approaches rely on deterministic or discretized formulations, which lead to unoptimized fabrication time and make planning sensitive to voxel resolution. They also do not explicitly account for distortion in intermediate structures formed during manufacturing. To address these limitations, we represent manufacturing states using continuous fields, which scale naturally to models with large dimensions and fine geometric features while enabling smoother fabrication sequences. Based on this representation, we formulate process planning as a numerical optimization problem under multiple objectives, including final shape completeness, intermediate structural strength, manufacturing time, self-supporting and collision-free. Experimental results show that our method can generate distortion-aware process plans on a variety of models while substantially reducing fabrication time through up to a 72.6\% reduction in the volume of extra support.
@@ -550,6 +550,53 @@ final_state = 1.0
 operation_volume = 1.5
 SM_Collision_Free = self_support * 0.1
 ```
+
+Therefore, `BAYESIAN_WEIGHT_SEARCH_SPACE` should contain only the three free
+weights. The recommended format is a stepped discrete range:
+
+```python
+BAYESIAN_WEIGHT_SEARCH_SPACE = {
+    'self_support': {
+        'type': 'discrete_range',
+        'low': 1.0,
+        'high': 100.0,
+        'step': 1.0,
+    },
+    'AM_Collision_Free': {
+        'type': 'discrete_range',
+        'low': 1.0,
+        'high': 100.0,
+        'step': 1.0,
+    },
+    'structure': {
+        'type': 'discrete_range',
+        'low': 0.1,
+        'high': 10.0,
+        'step': 0.1,
+    },
+}
+```
+
+For each discrete range, `step` must be positive and `(high - low)` must be
+divisible by `step`. The corresponding default values in `WEIGHTS` must lie
+exactly on these grids because they are enqueued as the first Optuna trial.
+
+Two other search-space formats are supported when continuous or explicitly
+listed values are more appropriate:
+
+```python
+# Continuous range: (low, high, use_log_scale)
+'self_support': (1.0, 100.0, False)
+'structure': (0.01, 10.0, True)
+
+# Explicit discrete candidates
+'AM_Collision_Free': [10.0, 25.0, 50.0, 100.0]
+```
+
+`False` selects uniform continuous sampling and `True` selects logarithmic
+continuous sampling. Do not include `final_state`, `operation_volume`, or
+`SM_Collision_Free` in the search space: they are fixed or derived by the
+constrained optimizer as shown above.
 
 Each trial calls `main_optimize.py` with a sampled weight set. By default, the bracket workflow reads:
 
