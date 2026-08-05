@@ -446,7 +446,12 @@ def pretrain_field(model, field_index, train_positions, train_targets, val_posit
     # --- Learning rate scheduler configuration ---
     scheduler_params_key = f'scheduler_params{field_index}'
     scheduler_config = config[scheduler_params_key]
-    
+
+    # Warmup: for mask fields, keep LR constant for warmup_epochs before enabling scheduler
+    warmup_epochs = scheduler_config.get('warmup_epochs', 0)
+    if warmup_epochs > 0:
+        print(f"Warmup enabled: keeping constant LR={learning_rate} for first {warmup_epochs} epochs")
+
     if scheduler_config['type'] == 'ReduceLROnPlateau':
         patience = scheduler_config.get('patience', 10)
         factor = scheduler_config.get('factor', 0.5)
@@ -592,9 +597,18 @@ def pretrain_field(model, field_index, train_positions, train_targets, val_posit
                 
                 current_val_loss = val_loss_accum / len(val_positions)
                 val_losses.append(current_val_loss)
-            pbar.set_description(f"Pre-F{field_index} E{epoch} | TL: {current_train_loss:.6f} | VL: {current_val_loss:.6f} | Best VL: {best_val_loss:.6f} | LR: {optimizer.param_groups[0]['lr']:.2e}")
-            
+            warmup_tag = " [WARMUP]" if epoch < warmup_epochs else ""
+            pbar.set_description(f"Pre-F{field_index} E{epoch} | TL: {current_train_loss:.6f} | VL: {current_val_loss:.6f} | Best VL: {best_val_loss:.6f} | LR: {optimizer.param_groups[0]['lr']:.2e}{warmup_tag}")
+
             # ====== Early Stopping Check (based on validation loss) ======
+            # At the end of warmup, reset early stopping state so accumulated
+            # non-improvements during warmup don't trigger an immediate stop.
+            if warmup_epochs > 0 and epoch == warmup_epochs:
+                pbar.write(f"⚡ Warmup ended at epoch {epoch}. Resetting early stopping counter and best_val_loss.")
+                best_val_loss = current_val_loss
+                epochs_no_improve = 0
+                best_model_state = {k: v.cpu().clone() for k, v in model.state_dict().items()}
+
             if current_val_loss < best_val_loss - early_stop_min_delta:
                 relative_improvement = (best_val_loss - current_val_loss) / best_val_loss if best_val_loss < float('inf') else 0
                 absolute_improvement = best_val_loss - current_val_loss
@@ -607,14 +621,17 @@ def pretrain_field(model, field_index, train_positions, train_targets, val_posit
                 epochs_no_improve += 1
             
             # Check if early stopping should be triggered
-            if epochs_no_improve >= early_stop_patience:
+            # Skip early stopping during warmup (model not expected to improve yet)
+            if epoch >= warmup_epochs and epochs_no_improve >= early_stop_patience:
                 pbar.write(f"⚠ Early stopping triggered at epoch {epoch} (field {field_index})!")
                 pbar.write(f"   Validation loss has not improved for {epochs_no_improve * 5} epochs")
                 pbar.write(f"   Best validation loss: {best_val_loss:.6f}")
                 break
-            
+
             # Update learning rate scheduler based on validation loss
-            scheduler.step(current_val_loss)
+            # Skip scheduler during warmup phase (keep LR constant)
+            if epoch >= warmup_epochs:
+                scheduler.step(current_val_loss)
         else:
             # Update progress bar without validation
             pbar.set_description(f"Pre-F{field_index} E{epoch} | TL: {current_train_loss:.6f} | Best VL: {best_val_loss:.6f} | LR: {optimizer.param_groups[0]['lr']:.2e}")
@@ -1092,30 +1109,62 @@ def main():
                    config=cfg.TRAINING_CONFIG, experiment=experiment)
 
 
-    # 3.5 Pre-train field M2 - output 1 for valid points, 0 for invalid points
-    print("\n=== Training Mask Field (1 for valid points, 0 for invalid points) ===")
-    all_pts_for_mask = torch.cat([M2_positive_position_tensor, M2_negative_position_tensor], dim=0)
-    mask_labels = torch.cat([
-        torch.ones(len(M2_positive_position_tensor), 1, dtype=torch.float32),
-        torch.zeros(len(M2_negative_position_tensor), 1, dtype=torch.float32)
-    ], dim=0)
-    n_mask_samples = len(all_pts_for_mask)
-    n_mask_val = int(n_mask_samples * args.val_split)
-    n_mask_train = n_mask_samples - n_mask_val
-    mask_indices = torch.randperm(n_mask_samples)
-    mask_train_indices = mask_indices[:n_mask_train]
-    mask_val_indices = mask_indices[n_mask_train:]
-    M2_train_pts = all_pts_for_mask[mask_train_indices]
-    M2_train_labels = mask_labels[mask_train_indices]
-    M2_val_pts = all_pts_for_mask[mask_val_indices]
-    M2_val_labels = mask_labels[mask_val_indices]
-    
-    _,_,pos_weight_M2 = pretrain_field(model, 'M2', M2_train_pts, M2_train_labels, M2_val_pts, M2_val_labels,
-                   config=cfg.TRAINING_CONFIG, experiment=experiment)
-    
+    # 3.5 Field M2.
+    #
+    # M1 and M2 are trained on the same data: empty_mask = ~valid_M1 | valid_M2
+    # and valid_M2 is a subset of valid_M1 (time2 >= time1), so both the
+    # positive sets reduce to valid_M2 and both the negative sets to ~valid_M1.
+    # When the two mask fields are also architecturally identical, pretraining
+    # M2 separately would only reproduce M1 up to the random seed, so the M1
+    # weights are copied across instead.
+    #
+    # Configs may still give the mask fields different hash encoders (e.g. the
+    # bracket config uses N_maxM1=1024 but N_maxM2=2048), which makes the
+    # tensors shape-incompatible. In that case M2 is pretrained as before.
+    sd = model.state_dict()
+    m1_to_m2 = {k: k.replace('fieldM1', 'fieldM2') for k in sd if 'fieldM1' in k}
+    can_copy_M1_to_M2 = bool(m1_to_m2) and all(
+        m2_key in sd and sd[m1_key].shape == sd[m2_key].shape
+        for m1_key, m2_key in m1_to_m2.items()
+    )
+
+    if can_copy_M1_to_M2:
+        print("\n=== Copying M1 weights to M2 (same training data) ===")
+        for m1_key, m2_key in m1_to_m2.items():
+            sd[m2_key] = sd[m1_key].clone()
+        model.load_state_dict(sd)
+        print("✓ M1 weights copied to M2 successfully.")
+
+        pos_weight_M2 = pos_weight_M1
+        M2_val_pts = M1_val_pts
+        M2_val_labels = M1_val_labels
+        m2_pos_weight_note = " (copied from M1)"
+    else:
+        print("\n=== fieldM1 and fieldM2 have different shapes, pretraining M2 separately ===")
+        print("=== Training Mask Field (1 for valid points, 0 for invalid points) ===")
+        all_pts_for_mask = torch.cat([M2_positive_position_tensor, M2_negative_position_tensor], dim=0)
+        mask_labels = torch.cat([
+            torch.ones(len(M2_positive_position_tensor), 1, dtype=torch.float32),
+            torch.zeros(len(M2_negative_position_tensor), 1, dtype=torch.float32)
+        ], dim=0)
+        n_mask_samples = len(all_pts_for_mask)
+        n_mask_val = int(n_mask_samples * args.val_split)
+        n_mask_train = n_mask_samples - n_mask_val
+        mask_indices = torch.randperm(n_mask_samples)
+        mask_train_indices = mask_indices[:n_mask_train]
+        mask_val_indices = mask_indices[n_mask_train:]
+        M2_train_pts = all_pts_for_mask[mask_train_indices]
+        M2_train_labels = mask_labels[mask_train_indices]
+        M2_val_pts = all_pts_for_mask[mask_val_indices]
+        M2_val_labels = mask_labels[mask_val_indices]
+
+        _,_,pos_weight_M2 = pretrain_field(model, 'M2', M2_train_pts, M2_train_labels, M2_val_pts, M2_val_labels,
+                       config=cfg.TRAINING_CONFIG, experiment=experiment)
+        m2_pos_weight_note = ""
+
     print(f"Pos weight M1: {pos_weight_M1}")
     eval_result_M1 = evaluate_mask_field(model, M1_val_pts, M1_val_labels, field_type='fieldM1')
-    print(f"Pos weight M2: {pos_weight_M2}")
+    print(f"Pos weight M2{m2_pos_weight_note}: {pos_weight_M2}")
     eval_result_M2 = evaluate_mask_field(model, M2_val_pts, M2_val_labels, field_type='fieldM2')
     
     # --- 5. Save model and normalization parameters ---

@@ -152,13 +152,24 @@ TRAINING_CONFIG = {
         'type': 'ReduceLROnPlateau',
         'patience': 10,  # Slightly reduced patience for faster adaptation
         'factor': 0.5,
-        'min_lr': 1e-7
+        'min_lr': 1e-7,
+        # Optional. Keeps the learning rate constant and suspends both the
+        # scheduler and early stopping for this many epochs. Useful when a mask
+        # field cold-starts slowly (balanced 50/50 batches can cancel gradients).
+        # Omit or set to 0 to disable warmup. Validation runs every 5 epochs, so
+        # use a multiple of 5 for the end-of-warmup state reset to take effect.
+        'warmup_epochs': 0
     },
+    # fieldM2 is only pretrained separately when it is not shape-compatible with
+    # fieldM1 (e.g. when N_maxM1 != N_maxM2). Both mask fields see identical
+    # training data, so when the two encoders match, main_pre_train.py copies the
+    # pretrained fieldM1 weights into fieldM2 and ignores these parameters.
     'scheduler_paramsM2': {
         'type': 'ReduceLROnPlateau',
         'patience': 10,  # Slightly reduced patience for faster adaptation
         'factor': 0.5,
-        'min_lr': 1e-7
+        'min_lr': 1e-7,
+        'warmup_epochs': 0
     },
     'scheduler_paramsDT': {
         'type': 'ReduceLROnPlateau',
