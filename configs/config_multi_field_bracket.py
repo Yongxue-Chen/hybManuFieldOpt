@@ -42,11 +42,13 @@ N_HIDDEN_LAYERS3 = 2
 
 # Multi-resolution hash encoding parameters for the mask field
 # Reduced capacity to prevent overfitting
+# fieldM1 and fieldM2 must stay identical here: they are trained on the same
+# data, so main_pre_train.py pretrains M1 only and copies its weights into M2.
 LM1 = 16  # Reduced from 16 to 12 levels
 TM1 = 2**16  # Reduced hash table size
 FM1 = 2
 N_minM1 = 16
-N_maxM1 = 1024
+N_maxM1 = 2048
 N_NEURONSM1 = 64
 N_HIDDEN_LAYERSM1 = 2
 

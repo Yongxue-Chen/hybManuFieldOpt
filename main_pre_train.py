@@ -1118,9 +1118,10 @@ def main():
     # M2 separately would only reproduce M1 up to the random seed, so the M1
     # weights are copied across instead.
     #
-    # Configs may still give the mask fields different hash encoders (e.g. the
-    # bracket config uses N_maxM1=1024 but N_maxM2=2048), which makes the
-    # tensors shape-incompatible. In that case M2 is pretrained as before.
+    # The shipped configs keep the two mask fields identical, so this is the
+    # normal path. A custom config may still give them different hash encoders
+    # (e.g. N_maxM1 != N_maxM2), which makes the tensors shape-incompatible; in
+    # that case M2 is pretrained separately as before.
     sd = model.state_dict()
     m1_to_m2 = {k: k.replace('fieldM1', 'fieldM2') for k in sd if 'fieldM1' in k}
     can_copy_M1_to_M2 = bool(m1_to_m2) and all(
