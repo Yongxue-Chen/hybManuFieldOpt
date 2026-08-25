@@ -1,11 +1,12 @@
 # Field Optimization for Scalable and Distortion-Aware Process Planning in Hybrid Additive-Subtractive Manufacturing
 ![Teaser](./assets/teaser.png)
 
-[Yongxue Chen](https://yongxue-chen.github.io/), Tao Liu, Aoran Lyu, Yu Jiang, Neelotpal Dutta, and Charlie C.L. Wang, "[Field Optimization for Scalable and Distortion-Aware Process Planning in Hybrid Additive-Subtractive Manufacturing](TODO)", TODO venue / preprint, TODO year.<br>
-[[Project](TODO)] [[Paper](TODO)] [[Video](https://youtu.be/HE7gqaH4Iv0)]
+[Yongxue Chen](https://yongxue-chen.github.io/), Tao Liu, Aoran Lyu, Yu Jiang, Neelotpal Dutta, and [Charlie C.L. Wang](https://mewangcl.github.io/)<sup>&dagger;</sup>, "[Field Optimization for Scalable and Distortion-Aware Process Planning in Hybrid Additive-Subtractive Manufacturing](https://yongxue-chen.github.io/hybManuFieldOpt/hybManuFieldOpt_preprint.pdf)", ACM Transactions on Graphics (SIGGRAPH Asia 2026), Conditionally accepted.<br>
+[[Project](https://yongxue-chen.github.io/hybManuFieldOpt/)] [[Paper](https://yongxue-chen.github.io/hybManuFieldOpt/hybManuFieldOpt_preprint.pdf)] [[Video](https://youtu.be/HE7gqaH4Iv0)]<br>
+<sup>&dagger;</sup>Corresponding author.
 
 ## Abstract
-This paper presents a field-based optimization method for process planning in hybrid manufacturing, where the goal is to determine a feasible and efficient sequence of additive and subtractive operations for fabricating a target shape. Existing approaches rely on deterministic or discretized formulations, which lead to unoptimized fabrication time and make planning sensitive to voxel resolution. They also do not explicitly account for distortion in intermediate structures formed during manufacturing. To address these limitations, we represent manufacturing states using continuous fields, which scale naturally to models with large dimensions and fine geometric features while enabling smoother fabrication sequences. Based on this representation, we formulate process planning as a numerical optimization problem under multiple objectives, including final shape completeness, intermediate structural strength, manufacturing time, self-supporting and collision-free. Experimental results show that our method can generate distortion-aware process plans on a variety of models while substantially reducing fabrication time through up to a 72.6\% reduction in the volume of extra support.
+This paper presents a field-based optimization method for process planning in hybrid manufacturing, where the goal is to determine a feasible and efficient sequence of additive and subtractive operations for fabricating a target shape. Existing approaches rely on deterministic or discretized formulations, which lead to unoptimized fabrication time and make planning sensitive to voxel resolution. They also do not explicitly account for distortion in intermediate structures formed during manufacturing. To address these limitations, we represent manufacturing states using continuous fields, which scale naturally to models with large dimensions and fine geometric features while enabling smoother fabrication sequences. Based on this representation, we formulate process planning as a numerical optimization problem under multiple objectives, including final shape conformance, intermediate structural strength, manufacturing time, self-supporting and collision-free. Experimental results show that our method can generate distortion-aware process plans on a variety of models while substantially reducing fabrication time through up to a 72.6\% reduction in the volume of extra support.
 
 ## Repository Scope
 This repository provides a PyTorch implementation of the continuous field optimization framework. Given an input STL model, the pipeline prepares support-aware geometry, builds voxel and/or neural SDF geometry representations, imports an initial operation field produced by the companion voxel-based planner, optimizes neural manufacturing fields, and postprocesses the optimized network into layers and tool paths.
@@ -743,11 +744,14 @@ assets/                           README and documentation assets
 If you use this code in academic work, please cite the corresponding paper.
 
 ```bibtex
-@misc{fieldopt_hm,
-  title  = {TODO: Continuous Field Optimization for Hybrid Additive-Subtractive Manufacturing},
-  author = {TODO},
-  year   = {TODO},
-  note   = {TODO}
+@article{chen2026fieldoptimization,
+  title   = {Field Optimization for Scalable and Distortion-Aware
+             Process Planning in Hybrid Additive-Subtractive Manufacturing},
+  author  = {Chen, Yongxue and Liu, Tao and Lyu, Aoran and Jiang, Yu
+             and Dutta, Neelotpal and Wang, Charlie C. L.},
+  journal = {ACM Transactions on Graphics (SIGGRAPH Asia)},
+  year    = {2026},
+  note    = {Conditionally accepted}
 }
 ```
 
