@@ -809,7 +809,27 @@ assets/                           README and documentation assets
 ## Citation
 If you use this code in academic work, please cite the corresponding paper.
 
-Yongxue Chen, Tao Liu, Aoran Lyu, Yu Jiang, Neelotpal Dutta, and Charlie C.L. Wang. 2026. Field Optimization for Scalable and Distortion-Aware Process Planning in Hybrid Additive-Subtractive Manufacturing. *ACM Trans. Graph.* 45, 6, Article 252 (December 2026), 16 pages. [https://doi.org/10.1145/3842560](https://doi.org/10.1145/3842560)
+```bibtex
+@article{10.1145/3842560,
+  author     = {Chen, Yongxue and Liu, Tao and Lyu, Aoran and Jiang, Yu and
+                Dutta, Neelotpal and Wang, Charlie C. L.},
+  title      = {Field Optimization for Scalable and Distortion-Aware Process
+                Planning in Hybrid Additive-Subtractive Manufacturing},
+  year       = {2026},
+  issue_date = {December 2026},
+  publisher  = {Association for Computing Machinery},
+  address    = {New York, NY, USA},
+  volume     = {45},
+  number     = {6},
+  issn       = {0730-0301},
+  url        = {https://doi.org/10.1145/3842560},
+  doi        = {10.1145/3842560},
+  journal    = {ACM Trans. Graph.},
+  month      = dec,
+  articleno  = {252},
+  numpages   = {16}
+}
+```
 
 ## Supplement: RTX 4070 Ti / CUDA 12.8 Setup
 
