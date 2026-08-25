@@ -479,17 +479,12 @@ a {
   border-radius: 18px;
 }
 
-.citation-card pre,
-.citation-text {
+.citation-card pre {
   margin: 0;
   overflow-x: auto;
   color: #34413e;
   font-size: 0.88rem;
   line-height: 1.65;
-}
-
-.citation-text {
-  padding-right: 110px;
 }
 
 .copy-button {
@@ -572,11 +567,6 @@ iframe {
 }
 
 @media (max-width: 800px) {
-  .citation-text {
-    padding-top: 44px;
-    padding-right: 0;
-  }
-
   .site-header {
     min-height: 64px;
   }
