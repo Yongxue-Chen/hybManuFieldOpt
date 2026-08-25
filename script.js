@@ -20,7 +20,8 @@ document.querySelectorAll("[data-copy-target]").forEach((button) => {
     if (!target) return;
 
     try {
-      await navigator.clipboard.writeText(target.textContent);
+      const text = target.textContent.replace(/\s+/g, " ").trim();
+      await navigator.clipboard.writeText(text);
       const originalLabel = button.textContent;
       button.textContent = "Copied";
       window.setTimeout(() => {
