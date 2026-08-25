@@ -1,7 +1,7 @@
 # Field Optimization for Scalable and Distortion-Aware Process Planning in Hybrid Additive-Subtractive Manufacturing
 ![Teaser](./assets/teaser.png)
 
-[Yongxue Chen](https://yongxue-chen.github.io/), Tao Liu, Aoran Lyu, Yu Jiang, Neelotpal Dutta, and [Charlie C.L. Wang](https://mewangcl.github.io/)<sup>&dagger;</sup>, "[Field Optimization for Scalable and Distortion-Aware Process Planning in Hybrid Additive-Subtractive Manufacturing](https://yongxue-chen.github.io/hybManuFieldOpt/hybManuFieldOpt_preprint.pdf)", ACM Transactions on Graphics (SIGGRAPH Asia 2026), Accepted.<br>
+[Yongxue Chen](https://yongxue-chen.github.io/), Tao Liu, Aoran Lyu, Yu Jiang, Neelotpal Dutta, and [Charlie C.L. Wang](https://mewangcl.github.io/)<sup>&dagger;</sup>, "[Field Optimization for Scalable and Distortion-Aware Process Planning in Hybrid Additive-Subtractive Manufacturing](https://yongxue-chen.github.io/hybManuFieldOpt/hybManuFieldOpt_preprint.pdf)", ACM Transactions on Graphics (SIGGRAPH Asia 2026).<br>
 [[Project](https://yongxue-chen.github.io/hybManuFieldOpt/)] [[Paper](https://yongxue-chen.github.io/hybManuFieldOpt/hybManuFieldOpt_preprint.pdf)] [[Video](https://youtu.be/HE7gqaH4Iv0)]<br>
 <sup>&dagger;</sup>Corresponding author.
 
@@ -750,8 +750,7 @@ If you use this code in academic work, please cite the corresponding paper.
   author  = {Chen, Yongxue and Liu, Tao and Lyu, Aoran and Jiang, Yu
              and Dutta, Neelotpal and Wang, Charlie C. L.},
   journal = {ACM Transactions on Graphics (SIGGRAPH Asia)},
-  year    = {2026},
-  note    = {Accepted}
+  year    = {2026}
 }
 ```
 
